@@ -27,6 +27,10 @@ def parse_args():
     parser.add_argument("--partition", default="learnfair", type=str, help="Partition where to submit")
     parser.add_argument("--use_volta32", action='store_true', help="Request 32G V100 GPUs")
     parser.add_argument('--comment', default="", type=str, help="Comment to pass to scheduler")
+    parser.add_argument('--data_path',
+                        default='/mnt/VMSTORE/workspace_ty/IndDatasets/',
+                        type=str,
+                        help='dataset path')
     return parser.parse_args()
 
 
