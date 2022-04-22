@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-# export CUDA_VISIBLE_DEVICES=0,1,2,3
-export CUDA_VISIBLE_DEVICES=4,5,6,7
-GPUS=4
-PORT=${PORT:-29500}
-
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
 python $(dirname "$0")/../submitit_pretrain.py \
-    --job_dir $(dirname "$0")/../ind_models/debug \
     --ngpus 6 \
     --nodes 4 \
     --batch_size 24 \
