@@ -4,7 +4,7 @@ import os.path as osp
 IMG_EXTENSIONS = [
     ".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp"
 ]
-INCLUDE_DATASET = ['KLdata_v20220221']
+INCLUDE_DATASET = []
 EXCLUDE_DATASET = [
     'A_解压完成压缩包', '$RECYCLE.BIN', 'UCI_Steel_Plates_Faults_Data_Set'
 ]
