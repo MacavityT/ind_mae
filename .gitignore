@@ -125,5 +125,5 @@ wandb/
 *_debug.py
 run*.sh
 # link
-pretrain
-work_dirs*
+ind_data
+ind_models
