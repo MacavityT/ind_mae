@@ -110,7 +110,7 @@ def get_args_parser():
 
     # Dataset parameters
     parser.add_argument('--data_path',
-                        default='/datasets01/imagenet_full_size/061417/',
+                        default='/mnt/VMSTORE/workspace_ty/IndDatasets/',
                         type=str,
                         help='dataset path')
 
