@@ -1,24 +1,39 @@
-from genericpath import isfile
 import os
 import os.path as osp
 
-IMG_EXTENSIONS = (".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif",
-                  ".tiff", ".webp")
-EXCLUDE_DATASET = ('A_解压完成压缩包', '$RECYCLE.BIN',
-                   'UCI_Steel_Plates_Faults_Data_Set')
-EXCLUDE_DATASET_FOLDER = ('GroundTruth', 'Label', 'Mask_images',
-                          'ground_truth')
+IMG_EXTENSIONS = [
+    ".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp"
+]
+INCLUDE_DATASET = ['KLdata_v20220221']
+EXCLUDE_DATASET = [
+    'A_解压完成压缩包', '$RECYCLE.BIN', 'UCI_Steel_Plates_Faults_Data_Set'
+]
+EXCLUDE_DATASET_FOLDER = [
+    'GroundTruth', 'Label', 'Mask_images', 'ground_truth'
+]
 
-root = '/mnt/tmp'
+root = '/mnt/VMSTORE/IndDatasets'
 txt = 'train.txt'
 output = osp.join(root, txt)
-
 datasets = os.listdir(root)
+
+# count some specific datasets only
+if len(INCLUDE_DATASET) != 0:
+    datasets_count = []
+    for set in datasets:
+        if set in INCLUDE_DATASET:
+            datasets_count.append(set)
+else:
+    datasets_count = datasets
+
 output_list = []
-for dataset in datasets:
+for dataset in datasets_count:
+    # remove some specific datasets
     if dataset in EXCLUDE_DATASET:
         continue
     dataset_path = osp.join(root, dataset)
+
+    # count folder only
     if osp.isfile(dataset_path):
         continue
 
