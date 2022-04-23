@@ -13,3 +13,9 @@ for name in samples:
     if not os.access(name, os.R_OK):
         print(f'Access error: {name}')
     bar.update()
+
+# for test cluster
+out = '/mnt/VMSTORE/checkfile_output.txt'
+with open(out, 'w') as f:
+    for name in samples:
+        f.write(name + '\n')
