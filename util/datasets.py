@@ -28,6 +28,11 @@ def build_dataset(is_train, args):
     return dataset
 
 
+def build_ind_dataset(is_train, args):
+    transform = build_transform(is_train, args)
+
+    return 0
+
 def build_transform(is_train, args):
     mean = IMAGENET_DEFAULT_MEAN
     std = IMAGENET_DEFAULT_STD
