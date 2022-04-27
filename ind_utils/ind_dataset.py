@@ -70,7 +70,7 @@ def _pillow2array(img, flag='color', channel_order='bgr'):
     return array
 
 
-class IndustryDataset(data.Dataset):
+class IndustryPretrainDataset(data.Dataset):
     """
     Dataset of Industry, including of several different datasets, 
     loading from .txt file.
@@ -79,6 +79,7 @@ class IndustryDataset(data.Dataset):
     def __init__(
         self,
         root: str,
+        img_prefix: str,
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -86,6 +87,7 @@ class IndustryDataset(data.Dataset):
     ):
         self.root = root
         self.ann_file = ann_file
+        self.img_prefix = img_prefix
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
@@ -97,7 +99,11 @@ class IndustryDataset(data.Dataset):
         if not osp.isabs(self.ann_file):
             self.ann_file = osp.join(self.root, self.ann_file)
         with open(self.ann_file) as f:
-            samples = [osp.join(self.root, x.strip()) for x in f.readlines()]
+            if self.img_prefix is not None:
+                prefix = osp.join(self.root, self.img_prefix)
+            else:
+                prefix = self.root
+            samples = [osp.join(prefix, x.strip()) for x in f.readlines()]
         return samples
 
     def get_imgbytes(self, filepath: Union[str, Path]) -> bytes:
@@ -155,3 +161,57 @@ class IndustryDataset(data.Dataset):
 
     def __len__(self) -> int:
         return len(self.samples)
+
+
+class IndustryFinetuneDataset(IndustryPretrainDataset):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def load_annotations(self):
+        assert isinstance(self.ann_file, str)
+
+        if not osp.isabs(self.ann_file):
+            self.ann_file = osp.join(self.root, self.ann_file)
+        if self.img_prefix is not None:
+            prefix = osp.join(self.root, self.img_prefix)
+        else:
+            prefix = self.root
+
+        samples = []
+        with open(self.ann_file) as f:
+            data_infos = [x.strip().split(' ') for x in f.readlines()]
+            for img_name, gt_label in data_infos:
+                img_path = osp.join(prefix, img_name)
+                samples.append([img_path, gt_label])
+        return samples
+
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (sample, target) where target is class_index of the target class.
+        """
+        img_path, gt_label = self.samples[index]
+        filename = img_path[len(self.root):]
+        if filename[0] == '/':
+            filename = filename[1:]
+
+        try:
+            img_bytes = self.get_imgbytes(img_path)
+            img = self.imfrombytes(img_bytes,
+                                   flag='color',
+                                   channel_order='rgb')
+            sample = Image.fromarray(img, mode='RGB')
+        except Exception as e:
+            print(f'Index {index}, Filename {filename} " : {repr(e)}')
+
+        if self.transform is not None:
+            sample = self.transform(sample)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        target = gt_label
+        return sample, target
