@@ -213,5 +213,5 @@ class IndustryFinetuneDataset(IndustryPretrainDataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        target = gt_label
+        target = int(gt_label)
         return sample, target
