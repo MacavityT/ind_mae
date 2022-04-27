@@ -12,8 +12,8 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
     --finetune $(dirname "$0")/../ind_models/mae_imagenet1k/checkpoint-199.pth \
     --nb_classes 6 \
-    --accum_iter 7 \
-    --batch_size 384 \
+    --accum_iter 14 \
+    --batch_size 192 \
     --model vit_base_patch16 \
     --epochs 90 \
     --blr 0.1 \
