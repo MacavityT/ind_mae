@@ -16,7 +16,7 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --batch_size 384 \
     --model vit_base_patch16 \
     --epochs 90 \
-    --blr 0.1\
+    --blr 0.1 \
     --weight_decay 0.0 \
     --dist_eval \
     --img_prefix --data_path $(dirname "$0")/../ind_data/Bridge_Crack_Image/DBCC_Training_Data_Set \

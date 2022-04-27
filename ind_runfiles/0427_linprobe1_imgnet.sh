@@ -18,6 +18,7 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --epochs 90 \
     --blr 0.1 \
     --weight_decay 0.0 \
+    --cls_token \
     --dist_eval \
     --data_path $(dirname "$0")/../ind_data/Kylberg_Texture_Dataset_v.1.0 \
     --local_rank 0

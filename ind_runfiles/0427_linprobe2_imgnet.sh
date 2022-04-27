@@ -18,6 +18,7 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --epochs 90 \
     --blr 0.1 \
     --weight_decay 0.0 \
+    --cls_token \
     --dist_eval \
     --data_path $(dirname "$0")/../ind_data/NEU_surface_defect_database/NEU-CLS \
     --local_rank 0
