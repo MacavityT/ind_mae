@@ -4,6 +4,7 @@ import numpy as np
 import random
 
 root = '/mnt/VMSTORE/workspace_ty/IndDatasets/Kylberg_Texture_Dataset_v.1.0/'
+# root = '/data/taiyan/DATASETS/industry/Kylberg_Texture_Dataset_v.1.0/'
 all_txt = 'all.txt'
 train_txt = 'train.txt'
 val_txt = 'val.txt'
