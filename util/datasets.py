@@ -30,11 +30,11 @@ def build_dataset(is_train, args):
     return dataset
 
 
-def build_ind_dataset(is_train, img_prefix, args):
+def build_ind_dataset(is_train, args):
     transform = build_transform(is_train, args)
     dataset = IndustryFinetuneDataset(
         root=args.data_path,
-        img_prefix=img_prefix,
+        img_prefix=args.img_prefix,
         ann_file='train.txt' if is_train else 'val.txt',
         transform=transform)
     return dataset

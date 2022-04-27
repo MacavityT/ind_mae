@@ -211,6 +211,10 @@ def get_args_parser():
                         default='/datasets01/imagenet_full_size/061417/',
                         type=str,
                         help='dataset path')
+    parser.add_argument('--img_prefix',
+                        default=None,
+                        type=str,
+                        help='dataset path')
     parser.add_argument('--nb_classes',
                         default=1000,
                         type=int,
@@ -284,10 +288,8 @@ def main(args):
 
     # dataset_train = build_dataset(is_train=True, args=args)
     # dataset_val = build_dataset(is_train=False, args=args)
-    dataset_train = build_ind_dataset(is_train=True,
-                                      img_prefix=None,
-                                      args=args)
-    dataset_val = build_ind_dataset(is_train=False, img_prefix=None, args=args)
+    dataset_train = build_ind_dataset(is_train=True, args=args)
+    dataset_val = build_ind_dataset(is_train=False, args=args)
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
