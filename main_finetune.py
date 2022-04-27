@@ -271,6 +271,7 @@ def get_args_parser():
 
 
 def main(args):
+    topk = (1, )
     misc.init_distributed_mode(args)
 
     print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
@@ -436,8 +437,7 @@ def main(args):
                     loss_scaler=loss_scaler)
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device)
-        # test_stats = evaluate(data_loader_val, model, device, topk=(1, ))
+        test_stats = evaluate(data_loader_val, model, device, topk=topk)
         print(
             f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
         )
@@ -468,8 +468,7 @@ def main(args):
                             loss_scaler=loss_scaler,
                             epoch=epoch)
 
-        # test_stats = evaluate(data_loader_val, model, device)
-        test_stats = evaluate(data_loader_val, model, device, topk=(1, ))
+        test_stats = evaluate(data_loader_val, model, device, topk=topk)
         print(
             f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
         )
@@ -478,7 +477,9 @@ def main(args):
 
         if log_writer is not None:
             log_writer.add_scalar('perf/test_acc1', test_stats['acc1'], epoch)
-            log_writer.add_scalar('perf/test_acc5', test_stats['acc5'], epoch)
+            if topk == (1, 5):
+                log_writer.add_scalar('perf/test_acc5', test_stats['acc5'],
+                                      epoch)
             log_writer.add_scalar('perf/test_loss', test_stats['loss'], epoch)
 
         log_stats = {
