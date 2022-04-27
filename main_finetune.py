@@ -271,7 +271,7 @@ def get_args_parser():
 
 
 def main(args):
-    topk = (1, )
+    topk = (1, 5)
     misc.init_distributed_mode(args)
 
     print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
