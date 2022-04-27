@@ -212,9 +212,8 @@ def get_args_parser():
                         type=str,
                         help='dataset path')
     parser.add_argument('--img_prefix',
-                        default=None,
-                        type=str,
-                        help='dataset path')
+                        action='store_true',
+                        help='add train/val folder after root path')
     parser.add_argument('--nb_classes',
                         default=1000,
                         type=int,

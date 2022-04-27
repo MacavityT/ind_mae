@@ -36,6 +36,7 @@ def build_ind_dataset(is_train, args):
         root=args.data_path,
         img_prefix=args.img_prefix,
         ann_file='train.txt' if is_train else 'val.txt',
+        is_train=is_train,
         transform=transform)
     return dataset
 

@@ -79,7 +79,6 @@ class IndustryPretrainDataset(data.Dataset):
     def __init__(
         self,
         root: str,
-        img_prefix: str,
         ann_file: str,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
@@ -87,7 +86,6 @@ class IndustryPretrainDataset(data.Dataset):
     ):
         self.root = root
         self.ann_file = ann_file
-        self.img_prefix = img_prefix
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
@@ -99,11 +97,7 @@ class IndustryPretrainDataset(data.Dataset):
         if not osp.isabs(self.ann_file):
             self.ann_file = osp.join(self.root, self.ann_file)
         with open(self.ann_file) as f:
-            if self.img_prefix is not None:
-                prefix = osp.join(self.root, self.img_prefix)
-            else:
-                prefix = self.root
-            samples = [osp.join(prefix, x.strip()) for x in f.readlines()]
+            samples = [osp.join(self.root, x.strip()) for x in f.readlines()]
         return samples
 
     def get_imgbytes(self, filepath: Union[str, Path]) -> bytes:
@@ -165,7 +159,9 @@ class IndustryPretrainDataset(data.Dataset):
 
 class IndustryFinetuneDataset(IndustryPretrainDataset):
 
-    def __init__(self, **kwargs):
+    def __init__(self, img_prefix=False, is_train=True, **kwargs):
+        self.img_prefix = img_prefix
+        self.is_train = is_train
         super().__init__(**kwargs)
 
     def load_annotations(self):
@@ -173,8 +169,12 @@ class IndustryFinetuneDataset(IndustryPretrainDataset):
 
         if not osp.isabs(self.ann_file):
             self.ann_file = osp.join(self.root, self.ann_file)
-        if self.img_prefix is not None:
-            prefix = osp.join(self.root, self.img_prefix)
+
+        if self.img_prefix:
+            if self.is_train:
+                prefix = osp.join(self.root, 'train')
+            else:
+                prefix = osp.join(self.root, 'val')
         else:
             prefix = self.root
 
