@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source /root/miniconda3/bin/activate
 source activate mae
 python --version > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/version_test.log
 ls > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/ls_test.log
