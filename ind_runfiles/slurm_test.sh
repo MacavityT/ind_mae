@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 source activate mae
-python --version > ~/mae/ind_runfiles/version_test.log
-ls > ~/mae/ind_runfiles/ls_test.log
-# ls > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/ls_test.log
+python --version > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/version_test.log
+ls > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/ls_test.log
 
 # mpirun python {path}
 
