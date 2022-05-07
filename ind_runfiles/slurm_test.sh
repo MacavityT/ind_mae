@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 source /root/miniconda3/bin/activate
 source activate mae
-conda info -e > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/env.log
-python --version > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/version_test.log
-ls > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/ls_test.log
+# conda info -e > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/env.log
+python /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/slurm_test.py \
+    > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/cuda_test.log
 
-# mpirun python {path}
 
 # PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
 # python $(dirname "$0")/../submitit_pretrain.py \
