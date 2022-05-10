@@ -2,7 +2,7 @@
 source /root/miniconda3/bin/activate
 conda activate mae
 
-NAME=slurm_test
+NAME=dis_2node_test
 GPUS=6
 NNODES=${NNODES:-1}
 NODE_RANK=${NODE_RANK:-0}
