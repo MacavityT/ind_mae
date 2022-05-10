@@ -2,7 +2,7 @@
 source /root/miniconda3/bin/activate
 conda activate mae
 
-NAME=dis_2node_test
+NAME=${NAME:-dist_multinode_test}
 GPUS=6
 NNODES=${NNODES:-1}
 NODE_RANK=${NODE_RANK:-0}
@@ -28,12 +28,9 @@ python -m torch.distributed.launch \
     --epochs 200 \
     --warmup_epochs 40 \
     --blr 1.5e-4 --weight_decay 0.05 \
-    --data_path $(dirname "$0")/../ind_data/ \
-    --local_rank 0 \
-    > $(dirname "$0")/../ind_models/$NAME/shell_output.log
+    --data_path $(dirname "$0")/../ind_data/
 
-
-# Training instruction
+# Training instruction (2 Nodes)
 #   First machine: 
 #   NNODES=2 NODE_RANK=0 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/dist_2node_test.sh
 #   Second machine: 
