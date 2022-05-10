@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
 source /root/miniconda3/bin/activate
-source activate mae
+conda activate mae
 
-# python /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/slurm_test.py \
-#     > /mnt/VMSTORE/workspace_ty/ind_mae/ind_runfiles/cuda_test.log
-
-GPUS=6
-PORT=${PORT:-29500}
 NAME=slurm_test
+GPUS=6
+NNODES=${NNODES:-1}
+NODE_RANK=${NODE_RANK:-0}
+PORT=${PORT:-29500}
+MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
+
 
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
-python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
+python -m torch.distributed.launch \
+    --nnodes=$NNODES \
+    --node_rank=$NODE_RANK \
+    --master_addr=$MASTER_ADDR \
+    --nproc_per_node=$GPUS \
+    --master_port=$PORT \
     $(dirname "$0")/../main_pretrain.py \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
@@ -25,3 +31,10 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --data_path $(dirname "$0")/../ind_data/ \
     --local_rank 0 \
     > $(dirname "$0")/../ind_models/$NAME/shell_output.log
+
+
+# Training instruction
+#   First machine: 
+#   NNODES=2 NODE_RANK=0 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/dist_2node_test.sh
+#   Second machine: 
+#   NNODES=2 NODE_RANK=1 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/dist_2node_test.sh
