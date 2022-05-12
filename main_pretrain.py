@@ -180,9 +180,8 @@ def main(args):
 
     # industry dataset
     transform_train = transforms.Compose([
-        transforms.Resize(size=(224, 224)),
         transforms.RandomResizedCrop(args.input_size,
-                                     scale=(0.2, 1.0),
+                                     scale=(0.2, 1.2),
                                      interpolation=3),  # 3 is bicubic
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),

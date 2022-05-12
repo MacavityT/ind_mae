@@ -126,4 +126,5 @@ wandb/
 
 # link
 ind_data
+ind_data_split
 ind_models
