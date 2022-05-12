@@ -7,25 +7,15 @@ ann_file = osp.join(root, 'train.txt')
 with open(ann_file, 'r') as f:
     samples = [osp.join(root, x.strip()) for x in f.readlines()]
 
-# bar = trange(len(samples))
-# count = 0
-# for name in samples:
-#     count += 1
-#     if count > 100:
-#         break
-
-#     if not os.access(name, os.F_OK):
-#         print(f'Exists error: {name}')
-#     if not os.access(name, os.R_OK):
-#         print(f'Access error: {name}')
-#     bar.update()
-
-# for test cluster
+bar = trange(len(samples))
 count = 0
-out = '/mnt/VMSTORE/checkfile_output.txt'
-with open(out, 'w') as f:
-    for name in samples:
-        count += 1
-        if count > 100:
-            break
-        f.write(name + '\n')
+for name in samples:
+    count += 1
+    if count > 100:
+        break
+
+    if not os.access(name, os.F_OK):
+        print(f'Exists error: {name}')
+    if not os.access(name, os.R_OK):
+        print(f'Access error: {name}')
+    bar.update()

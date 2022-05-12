@@ -135,7 +135,7 @@ def main(mode, stride, patch_size):
     with open(IMG_TXT_NEW, 'w') as f:
         for name, label in zip(dataset['names'], dataset['labels']):
             # f.write('{} {}\n'.format(name, label))
-            f.write(f'{name} \n')
+            f.write(f'{name}\n')
 
 
 if __name__ == '__main__':
