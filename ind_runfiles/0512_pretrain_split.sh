@@ -4,7 +4,7 @@ conda activate mae
 
 NAME=${NAME:-0512_pretrain_split}
 GPUS=6
-NNODES=${NNODES:-6}
+NNODES=${NNODES:-5}
 NODE_RANK=${NODE_RANK:-0}
 PORT=${PORT:-29500}
 MASTER_ADDR=${MASTER_ADDR:-"127.0.0.1"}
@@ -20,8 +20,8 @@ python -m torch.distributed.launch \
     $(dirname "$0")/../main_pretrain.py \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
-    --batch_size 24 \
-    --accum_iter 5 \
+    --batch_size 32 \
+    --accum_iter 4 \
     --model mae_vit_base_patch16 \
     --norm_pix_loss \
     --mask_ratio 0.75 \
