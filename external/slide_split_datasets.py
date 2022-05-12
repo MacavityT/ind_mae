@@ -6,6 +6,92 @@ import cv2
 from tqdm import trange
 import multiprocessing
 
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Union
+from PIL import Image, ImageOps
+from pathlib import Path
+from PIL import ImageFile
+import io
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+
+def _pillow2array(img, flag='color', channel_order='bgr'):
+    """Convert a pillow image to numpy array.
+
+    Args:
+        img (:obj:`PIL.Image.Image`): The image loaded using PIL
+        flag (str): Flags specifying the color type of a loaded image,
+            candidates are 'color', 'grayscale' and 'unchanged'.
+            Default to 'color'.
+        channel_order (str): The channel order of the output image array,
+            candidates are 'bgr' and 'rgb'. Default to 'bgr'.
+
+    Returns:
+        np.ndarray: The converted numpy array
+    """
+    channel_order = channel_order.lower()
+    if channel_order not in ['rgb', 'bgr']:
+        raise ValueError('channel order must be either "rgb" or "bgr"')
+
+    if flag == 'unchanged':
+        array = np.array(img)
+        if array.ndim >= 3 and array.shape[2] >= 3:  # color image
+            array[:, :, :3] = array[:, :, (2, 1, 0)]  # RGB to BGR
+    else:
+        # Handle exif orientation tag
+        if flag in ['color', 'grayscale']:
+            img = ImageOps.exif_transpose(img)
+        # If the image mode is not 'RGB', convert it to 'RGB' first.
+        if img.mode != 'RGB':
+            if img.mode != 'LA':
+                # Most formats except 'LA' can be directly converted to RGB
+                img = img.convert('RGB')
+            else:
+                # When the mode is 'LA', the default conversion will fill in
+                #  the canvas with black, which sometimes shadows black objects
+                #  in the foreground.
+                #
+                # Therefore, a random color (124, 117, 104) is used for canvas
+                img_rgba = img.convert('RGBA')
+                img = Image.new('RGB', img_rgba.size, (124, 117, 104))
+                img.paste(img_rgba, mask=img_rgba.split()[3])  # 3 is alpha
+        if flag in ['color', 'color_ignore_orientation']:
+            array = np.array(img)
+            if channel_order != 'rgb':
+                array = array[:, :, ::-1]  # RGB to BGR
+        elif flag in ['grayscale', 'grayscale_ignore_orientation']:
+            img = img.convert('L')
+            array = np.array(img)
+        else:
+            raise ValueError(
+                'flag must be "color", "grayscale", "unchanged", '
+                f'"color_ignore_orientation" or "grayscale_ignore_orientation"'
+                f' but got {flag}')
+    return array
+
+
+def get_imgbytes(filepath: Union[str, Path]) -> bytes:
+    """Read data from a given ``filepath`` with 'rb' mode.
+
+    Args:
+        filepath (str or Path): Path to read data.
+
+    Returns:
+        bytes: Expected bytes object.
+    """
+    with open(filepath, 'rb') as f:
+        value_buf = f.read()
+    return value_buf
+
+
+def imfrombytes(content, flag='color', channel_order='bgr', backend=None):
+    with io.BytesIO(content) as buff:
+        img = Image.open(buff)
+        img = _pillow2array(img, flag, channel_order)
+    return img
+
+
 # configs
 ROOT = '/root/ty_room/'
 DATASET_PATH_ORIGIN = 'IndDatasets'
@@ -42,9 +128,16 @@ def _slide_split(ids, stride, patch_size):
         img_path_new = img_path_origin.replace(DATASET_PATH_ORIGIN,
                                                DATASET_PATH_NEW)
         # read image and object labels
-        img = cv2.imread(img_id, cv2.IMREAD_COLOR)
-        if img is None:
-            raise IOError(f'img is None: {img_id}')
+        img_suffix = img_id.split('.')[-1]
+        try:
+            if img_suffix not in ['tif', 'tiff']:
+                img = cv2.imread(img_id, cv2.IMREAD_COLOR)
+            else:
+                img_bytes = get_imgbytes(img_id)
+                img = imfrombytes(img_bytes, flag='color', channel_order='rgb')
+        except Exception as e:
+            print(f'Image read error :{img_id}')
+        assert img is not None
         h_img, w_img, _ = img.shape
 
         # slide split image as patches
