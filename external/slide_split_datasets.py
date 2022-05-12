@@ -231,8 +231,9 @@ def main(mode, stride, patch_size):
         dataset = dict(names=names, labels=labels)
 
     with open(IMG_TXT_NEW, 'w') as f:
-        for name, label in zip(dataset['names'], dataset['labels']):
-            # f.write('{} {}\n'.format(name, label))
+        # for name, label in zip(dataset['names'], dataset['labels']):
+        #     f.write('{} {}\n'.format(name, label))
+        for name in dataset['names']:
             f.write(f'{name}\n')
 
 
