@@ -11,8 +11,8 @@ bar = trange(len(samples))
 count = 0
 for name in samples:
     count += 1
-    if count > 100:
-        break
+    # if count > 100:
+    #     break
 
     if not os.access(name, os.F_OK):
         print(f'Exists error: {name}')
