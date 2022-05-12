@@ -1,3 +1,4 @@
+from msilib.schema import Error
 import os
 import os.path as osp
 import numpy as np
@@ -43,6 +44,8 @@ def _slide_split(ids, stride, patch_size):
                                                DATASET_PATH_NEW)
         # read image and object labels
         img = cv2.imread(img_id, cv2.IMREAD_COLOR)
+        if img is None:
+            raise IOError(f'img is None: {img_id}')
         h_img, w_img, _ = img.shape
 
         # slide split image as patches
@@ -54,21 +57,24 @@ def _slide_split(ids, stride, patch_size):
         index = 0
         for h_idx in range(h_grids):
             for w_idx in range(w_grids):
-                y1 = h_idx * h_stride
-                x1 = w_idx * w_stride
-                y2 = min(y1 + h_patch, h_img)
-                x2 = min(x1 + w_patch, w_img)
-                y1 = max(y2 - h_patch, 0)
-                x1 = max(x2 - w_patch, 0)
-                patch_img = img[y1:y2, x1:x2, :]
-
                 index += 1
                 patch_img_name = img_name + '_patch' + str(index) + '.jpg'
                 img_id_new = osp.join(
                     img_path_new, patch_img_name)[len(DATASET_PATH_NEW) + 1:]
-                new_ids.append(img_id_new)
                 patch_img_save_path = osp.join(DATASET_PATH_NEW, img_id_new)
-                cv2.imwrite(patch_img_save_path, patch_img)
+
+                # save file if not exists
+                if not osp.exists(patch_img_save_path):
+                    y1 = h_idx * h_stride
+                    x1 = w_idx * w_stride
+                    y2 = min(y1 + h_patch, h_img)
+                    x2 = min(x1 + w_patch, w_img)
+                    y1 = max(y2 - h_patch, 0)
+                    x1 = max(x2 - w_patch, 0)
+
+                    patch_img = img[y1:y2, x1:x2, :]
+                    cv2.imwrite(patch_img_save_path, patch_img)
+                new_ids.append(img_id_new)
 
         tbar.set_description('Doing: {}/{}, got {} splited images'.\
             format(i, len(ids), len(new_ids)))
