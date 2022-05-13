@@ -18,6 +18,36 @@ from timm.models.vision_transformer import PatchEmbed, Block
 
 from util.pos_embed import get_2d_sincos_pos_embed
 
+BASE_PARAM = dict(patch_size=16,
+                  embed_dim=768,
+                  depth=12,
+                  num_heads=12,
+                  decoder_embed_dim=512,
+                  decoder_depth=8,
+                  decoder_num_heads=16,
+                  mlp_ratio=4,
+                  norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
+LARGE_PARAM = dict(patch_size=16,
+                   embed_dim=1024,
+                   depth=24,
+                   num_heads=16,
+                   decoder_embed_dim=512,
+                   decoder_depth=8,
+                   decoder_num_heads=16,
+                   mlp_ratio=4,
+                   norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
+HUGE_PARAM = dict(patch_size=14,
+                  embed_dim=1280,
+                  depth=32,
+                  num_heads=16,
+                  decoder_embed_dim=512,
+                  decoder_depth=8,
+                  decoder_num_heads=16,
+                  mlp_ratio=4,
+                  norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
 
 class MaskedAutoencoderViT(nn.Module):
     """ Masked Autoencoder with VisionTransformer backbone
@@ -304,18 +334,32 @@ def mae_vit_huge_patch14_dec512d8b(**kwargs):
     return model
 
 
+# ind vit base models
+def mae_vit_base_img512_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 512
+    model = MaskedAutoencoderViT(**kwargs)
+    return model
+
+
+def mae_vit_base_img640_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 640
+    model = MaskedAutoencoderViT(**kwargs)
+    return model
+
+
+def mae_vit_base_img768_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 768
+    model = MaskedAutoencoderViT(**kwargs)
+    return model
+
+
 def mae_vit_base_img1024_patch16_dec512d8b(**kwargs):
-    model = MaskedAutoencoderViT(img_size=1024,
-                                 patch_size=16,
-                                 embed_dim=768,
-                                 depth=12,
-                                 num_heads=12,
-                                 decoder_embed_dim=512,
-                                 decoder_depth=8,
-                                 decoder_num_heads=16,
-                                 mlp_ratio=4,
-                                 norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                                 **kwargs)
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 1024
+    model = MaskedAutoencoderViT(**kwargs)
     return model
 
 
@@ -325,4 +369,7 @@ mae_vit_large_patch16 = mae_vit_large_patch16_dec512d8b  # decoder: 512 dim, 8 b
 mae_vit_huge_patch14 = mae_vit_huge_patch14_dec512d8b  # decoder: 512 dim, 8 blocks
 
 # set ind private archs
+mae_vit_base_img512_patch16 = mae_vit_base_img512_patch16_dec512d8b
+mae_vit_base_img640_patch16 = mae_vit_base_img640_patch16_dec512d8b
+mae_vit_base_img768_patch16 = mae_vit_base_img768_patch16_dec512d8b
 mae_vit_base_img1024_patch16 = mae_vit_base_img1024_patch16_dec512d8b

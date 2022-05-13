@@ -21,9 +21,9 @@ python -m torch.distributed.launch \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
     --input_size 1024 \
-    --batch_size 4 \
-    --accum_iter 28 \
-    --model mae_vit_base_img1024_patch16 \
+    --batch_size 1 \
+    --accum_iter 114 \
+    --model mae_vit_base_img512_patch16 \
     --norm_pix_loss \
     --mask_ratio 0.75 \
     --epochs 200 \
