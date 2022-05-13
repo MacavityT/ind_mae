@@ -20,8 +20,8 @@ python -m torch.distributed.launch \
     $(dirname "$0")/../main_pretrain.py \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
-    --batch_size 32 \
-    --accum_iter 4 \
+    --batch_size 12 \
+    --accum_iter 11 \
     --model mae_vit_base_patch16 \
     --norm_pix_loss \
     --mask_ratio 0.75 \
