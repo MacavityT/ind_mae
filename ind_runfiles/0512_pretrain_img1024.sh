@@ -2,7 +2,7 @@
 source /root/miniconda3/bin/activate
 conda activate mae
 
-NAME=${NAME:-0512_pretrain_1024}
+NAME=${NAME:-0512_pretrain_img1024}
 GPUS=6
 NNODES=${NNODES:-6}
 NODE_RANK=${NODE_RANK:-0}
@@ -20,6 +20,7 @@ python -m torch.distributed.launch \
     $(dirname "$0")/../main_pretrain.py \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
+    --input_size 1024 \
     --batch_size 4 \
     --accum_iter 28 \
     --model mae_vit_base_img1024_patch16 \
