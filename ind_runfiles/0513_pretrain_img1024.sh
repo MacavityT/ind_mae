@@ -2,7 +2,7 @@
 source /root/miniconda3/bin/activate
 conda activate mae
 
-NAME=${NAME:-0512_pretrain_img1024}
+NAME=${NAME:-0513_pretrain_img1024}
 GPUS=6
 NNODES=${NNODES:-6}
 NODE_RANK=${NODE_RANK:-0}
