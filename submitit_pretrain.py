@@ -18,22 +18,47 @@ import submitit
 
 def parse_args():
     trainer_parser = trainer.get_args_parser()
-    parser = argparse.ArgumentParser("Submitit for MAE pretrain", parents=[trainer_parser])
-    parser.add_argument("--ngpus", default=8, type=int, help="Number of gpus to request on each node")
-    parser.add_argument("--nodes", default=2, type=int, help="Number of nodes to request")
-    parser.add_argument("--timeout", default=4320, type=int, help="Duration of the job")
-    parser.add_argument("--job_dir", default="", type=str, help="Job dir. Leave empty for automatic.")
+    parser = argparse.ArgumentParser("Submitit for MAE pretrain",
+                                     parents=[trainer_parser])
+    parser.add_argument("--ngpus",
+                        default=8,
+                        type=int,
+                        help="Number of gpus to request on each node")
+    parser.add_argument("--nodes",
+                        default=2,
+                        type=int,
+                        help="Number of nodes to request")
+    parser.add_argument("--timeout",
+                        default=4320,
+                        type=int,
+                        help="Duration of the job")
+    parser.add_argument("--job_dir",
+                        default="",
+                        type=str,
+                        help="Job dir. Leave empty for automatic.")
 
-    parser.add_argument("--partition", default="learnfair", type=str, help="Partition where to submit")
-    parser.add_argument("--use_volta32", action='store_true', help="Request 32G V100 GPUs")
-    parser.add_argument('--comment', default="", type=str, help="Comment to pass to scheduler")
+    parser.add_argument("--partition",
+                        default="learnfair",
+                        type=str,
+                        help="Partition where to submit")
+    parser.add_argument("--use_volta32",
+                        action='store_true',
+                        help="Request 32G V100 GPUs")
+    parser.add_argument('--comment',
+                        default="",
+                        type=str,
+                        help="Comment to pass to scheduler")
     return parser.parse_args()
 
 
 def get_shared_folder() -> Path:
     user = os.getenv("USER")
-    if Path("/checkpoint/").is_dir():
-        p = Path(f"/checkpoint/{user}/experiments")
+    # if Path("/checkpoint/").is_dir():
+    #     p = Path(f"/checkpoint/{user}/experiments")
+    #     p.mkdir(exist_ok=True)
+    #     return p
+    if Path("/mnt/VMSTORE/workspace_ty/").is_dir():
+        p = Path(f"/mnt/VMSTORE/workspace_ty/{user}/experiments")
         p.mkdir(exist_ok=True)
         return p
     raise RuntimeError("No shared folder available")
@@ -49,6 +74,7 @@ def get_init_file():
 
 
 class Trainer(object):
+
     def __init__(self, args):
         self.args = args
 
@@ -75,12 +101,15 @@ class Trainer(object):
         from pathlib import Path
 
         job_env = submitit.JobEnvironment()
-        self.args.output_dir = Path(str(self.args.output_dir).replace("%j", str(job_env.job_id)))
+        self.args.output_dir = Path(
+            str(self.args.output_dir).replace("%j", str(job_env.job_id)))
         self.args.log_dir = self.args.output_dir
         self.args.gpu = job_env.local_rank
         self.args.rank = job_env.global_rank
         self.args.world_size = job_env.num_tasks
-        print(f"Process group: {job_env.num_tasks} tasks, rank: {job_env.global_rank}")
+        print(
+            f"Process group: {job_env.num_tasks} tasks, rank: {job_env.global_rank}"
+        )
 
 
 def main():
@@ -89,7 +118,8 @@ def main():
         args.job_dir = get_shared_folder() / "%j"
 
     # Note that the folder will depend on the job_id, to easily track experiments
-    executor = submitit.AutoExecutor(folder=args.job_dir, slurm_max_num_timeout=30)
+    executor = submitit.AutoExecutor(folder=args.job_dir,
+                                     slurm_max_num_timeout=30)
 
     num_gpus_per_node = args.ngpus
     nodes = args.nodes
@@ -112,8 +142,7 @@ def main():
         # Below are cluster dependent parameters
         slurm_partition=partition,
         slurm_signal_delay_s=120,
-        **kwargs
-    )
+        **kwargs)
 
     executor.update_parameters(name="mae")
 

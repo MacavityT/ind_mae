@@ -33,7 +33,7 @@ from util.misc import NativeScalerWithGradNormCount as NativeScaler
 import models_mae
 
 from engine_pretrain import train_one_epoch
-from ind_utils.ind_dataset import IndustryDataset
+from ind_utils.ind_dataset import IndustryPretrainDataset
 import sys
 
 
@@ -110,7 +110,7 @@ def get_args_parser():
 
     # Dataset parameters
     parser.add_argument('--data_path',
-                        default='/datasets01/imagenet_full_size/061417/',
+                        default='/mnt/VMSTORE/workspace_ty/IndDatasets/',
                         type=str,
                         help='dataset path')
 
@@ -171,16 +171,7 @@ def main(args):
     cudnn.benchmark = True
 
     # # simple augmentation
-    # transform_train = transforms.Compose([
-    #         transforms.RandomResizedCrop(args.input_size, scale=(0.2, 1.0), interpolation=3),  # 3 is bicubic
-    #         transforms.RandomHorizontalFlip(),
-    #         transforms.ToTensor(),
-    #         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
-
-    # industry dataset
     transform_train = transforms.Compose([
-        transforms.Resize(size=(224, 224)),
         transforms.RandomResizedCrop(args.input_size,
                                      scale=(0.2, 1.0),
                                      interpolation=3),  # 3 is bicubic
@@ -189,9 +180,10 @@ def main(args):
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     ])
-    dataset_train = IndustryDataset(root=args.data_path,
-                                    ann_file='train.txt',
-                                    transform=transform_train)
+    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
+    dataset_train = IndustryPretrainDataset(root=args.data_path,
+                                            ann_file='train.txt',
+                                            transform=transform_train)
 
     print(dataset_train)
 

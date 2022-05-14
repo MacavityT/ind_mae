@@ -12,7 +12,7 @@ EXCLUDE_DATASET_FOLDER = [
     'GroundTruth', 'Label', 'Mask_images', 'ground_truth'
 ]
 
-root = '/mnt/VMSTORE/IndDatasets'
+root = '/mnt/VMSTORE/workspace_ty/IndDatasetsSplit'
 txt = 'train.txt'
 output = osp.join(root, txt)
 datasets = os.listdir(root)

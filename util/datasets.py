@@ -16,6 +16,8 @@ from torchvision import datasets, transforms
 from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
+from ind_utils.ind_dataset import IndustryFinetuneDataset
+
 
 def build_dataset(is_train, args):
     transform = build_transform(is_train, args)
@@ -25,6 +27,17 @@ def build_dataset(is_train, args):
 
     print(dataset)
 
+    return dataset
+
+
+def build_ind_dataset(is_train, args):
+    transform = build_transform(is_train, args)
+    dataset = IndustryFinetuneDataset(
+        root=args.data_path,
+        img_prefix=args.img_prefix,
+        ann_file='train.txt' if is_train else 'val.txt',
+        is_train=is_train,
+        transform=transform)
     return dataset
 
 
@@ -56,7 +69,8 @@ def build_transform(is_train, args):
         crop_pct = 1.0
     size = int(args.input_size / crop_pct)
     t.append(
-        transforms.Resize(size, interpolation=PIL.Image.BICUBIC),  # to maintain same ratio w.r.t. 224 images
+        transforms.Resize(size, interpolation=PIL.Image.BICUBIC
+                          ),  # to maintain same ratio w.r.t. 224 images
     )
     t.append(transforms.CenterCrop(args.input_size))
 
