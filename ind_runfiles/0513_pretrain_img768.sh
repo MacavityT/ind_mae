@@ -29,10 +29,11 @@ python -m torch.distributed.launch \
     --epochs 200 \
     --warmup_epochs 40 \
     --blr 1.5e-4 --weight_decay 0.05 \
-    --data_path $(dirname "$0")/../ind_data/
+    --data_path $(dirname "$0")/../ind_data/ \
+    --resume $(dirname "$0")/../ind_models/$NAME/checkpoint-60.pth
 
 # Training instruction (2 Nodes)
 #   First machine: 
-#   NNODES=2 NODE_RANK=0 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/dist_2node_test.sh
+#   NNODES=6 NODE_RANK=0 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/0513_pretrain_img768.sh
 #   Second machine: 
-#   NNODES=2 NODE_RANK=1 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/dist_2node_test.sh
+#   NNODES=6 NODE_RANK=1 PORT=$MASTER_PORT MASTER_ADDR=$MASTER_ADDR sh ind_runfiles/0513_pretrain_img768.sh
