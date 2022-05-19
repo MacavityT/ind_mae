@@ -1,15 +1,22 @@
 """
 code from: https://blog.csdn.net/enter89/article/details/90293971
 """
+import os
+import os.path as osp
 import cv2
 import numpy as np
 from PIL import Image
 import requests
 from io import BytesIO
 import matplotlib
+from tqdm import trange
 
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
+IMG_EXTENSIONS = [
+    ".jpg", ".jpeg", ".png", ".ppm", ".bmp", ".pgm", ".tif", ".tiff", ".webp"
+]
 
 
 def aHash(img):
@@ -220,11 +227,75 @@ def runAllImageSimilaryFun(para1, para2):
     plt.show()
 
 
-def runIndImageSimilaryFun():
-    pass
+def aHash_trav(dataset_path, hash_func):
+    del_list = []
+    val_list = []
+    num_imgs = 0
+    val_imgs = 0
+    for home, dirs, files in os.walk(dataset_path):
+        # if val_imgs > 50:
+        #     break
+
+        hash_pool = []
+        dataset = home[len(dataset_path):].split('/')[0]
+        folder = home.split('/')[-1]
+        if len(files) == 0:
+            continue
+        tbar = trange(len(files))
+        num_folder_imgs = len(files)
+        val_folder_imgs = 0
+        for filename in files:
+            real_path = os.path.join(home, filename)
+            suffix = os.path.splitext(real_path)[-1]
+            if suffix not in IMG_EXTENSIONS:
+                print(
+                    f'Skipped {suffix} file in folder {folder}, dataset {dataset}'
+                )
+                continue
+
+            num_imgs += 1
+            del_stat = False
+            img = cv2.imread(real_path, cv2.IMREAD_COLOR)
+            if img is None:
+                del_list.append(real_path)
+            else:
+                hash_value = hash_func(img)
+                for hash_temp in hash_pool:
+                    sim = cmpHash(hash_value, hash_temp)
+                    if sim == 0:
+                        del_stat = True
+                        break
+                if del_stat:
+                    del_list.append(real_path)
+                else:
+                    hash_pool.append(hash_value)
+                    val_list.append(real_path)
+                    val_imgs += 1
+                    val_folder_imgs += 1
+
+            tbar.set_description(
+                f'Total valid num: {val_imgs}/{num_imgs}, Dataset {dataset} Folder {folder} valid num: {val_folder_imgs}/{num_folder_imgs}'
+            )
+            tbar.update()
+
+    return del_list, val_list
 
 
 if __name__ == "__main__":
     p1 = "https://ww3.sinaimg.cn/bmiddle/007INInDly1g336j2zziwj30su0g848w.jpg"
     p2 = "https://ww2.sinaimg.cn/bmiddle/007INInDly1g336j10d32j30vd0hnam6.jpg"
-    runAllImageSimilaryFun(p1, p2)
+
+    dataset_path = '/mnt/tmp/爬虫数据集/'
+    hash_func = dHash
+    del_list, val_list = aHash_trav(dataset_path, hash_func)
+
+    with open(osp.join(dataset_path, 'del_list.txt'), 'ab') as f:
+        tbar = trange(len(del_list))
+        for name in del_list:
+            f.write((name + '\n').encode('utf-8'))
+            tbar.update()
+    with open(osp.join(dataset_path, 'val_list.txt'), 'ab') as f:
+        tbar = trange(len(val_list))
+        for name in val_list:
+            f.write((name + '\n').encode('utf-8'))
+            tbar.update()
