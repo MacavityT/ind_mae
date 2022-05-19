@@ -1,3 +1,6 @@
+"""
+code from: https://blog.csdn.net/enter89/article/details/90293971
+"""
 import cv2
 import numpy as np
 from PIL import Image
@@ -215,6 +218,10 @@ def runAllImageSimilaryFun(para1, para2):
     plt.subplot(122)
     plt.imshow(Image.fromarray(cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)))
     plt.show()
+
+
+def runIndImageSimilaryFun():
+    pass
 
 
 if __name__ == "__main__":
