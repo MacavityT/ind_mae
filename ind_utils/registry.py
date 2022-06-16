@@ -55,7 +55,6 @@ def build_from_cfg(cfg, registry, default_args=None):
         raise type(e)(f'{obj_cls.__name__}: {e}')
 
 
-
 class Registry:
     """A registry to map strings to classes.
 
