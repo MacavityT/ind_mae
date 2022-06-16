@@ -21,7 +21,6 @@ Modified by Hangbo Bao, for generating the masked position for visual image tran
 #
 # Modified by Hangbo Bao, for generating the masked position for visual image transformer
 # --------------------------------------------------------'
-from logging import PlaceHolder
 import random
 import math
 import torch
@@ -180,10 +179,4 @@ class RandomMasking:
 
 
 class InstMaskingGenerator:
-    PlaceHolder
-
-
-def make_masking(**kwargs):
-    type = kwargs.pop('type')
-    masking = 0
-    return masking
+    pass
