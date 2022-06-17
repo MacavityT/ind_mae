@@ -4,7 +4,9 @@ import torch.nn as nn
 
 from timm.models.vision_transformer import PatchEmbed, Block
 from util.pos_embed import get_2d_sincos_pos_embed
-from ind_utils.masking import RandomMasking
+
+from ind_utils import RandomMasking
+from ind_utils import HOGTarget
 
 
 class MaskedFeatsAutoencoderViT(nn.Module):
@@ -21,6 +23,7 @@ class MaskedFeatsAutoencoderViT(nn.Module):
                  decoder_embed_dim=512,
                  mlp_ratio=4.,
                  masking=None,
+                 feats=None,
                  norm_layer=nn.LayerNorm,
                  norm_pix_loss=False):
         super().__init__()
@@ -47,16 +50,21 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         self.norm = norm_layer(embed_dim)
         # --------------------------------------------------------------------------
 
+        self.feats = HOGTarget()
+        self.masking = RandomMasking()
+        self.norm_pix_loss = norm_pix_loss
+
         # --------------------------------------------------------------------------
         # decoder specifics
-        self.feats_pred = nn.Linear(decoder_embed_dim,
-                                    patch_size**2 * in_chans,
-                                    bias=True)  # decoder to patch
-        # --------------------------------------------------------------------------
+        self.decoder_embed = nn.Linear(embed_dim, decoder_embed_dim, bias=True)
 
-        self.feats_generator = None
-        self.masking = None
-        self.norm_pix_loss = norm_pix_loss
+        self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
+
+        feats_len = self.feats.feats_len
+        self.decoder_pred = nn.Linear(decoder_embed_dim,
+                                      feats_len,
+                                      bias=True)  # decoder to patch
+        # --------------------------------------------------------------------------
 
         self.initialize_weights()
 
@@ -99,7 +107,7 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         x = x + self.pos_embed[:, 1:, :]
 
         # masking: length -> length * mask_ratio
-        x, mask, ids_restore = self.random_masking(x, mask_ratio)
+        x, mask, ids_restore = self.masking(x, mask_ratio)
 
         # append cls token
         cls_token = self.cls_token + self.pos_embed[:, :1, :]
@@ -112,6 +120,25 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         x = self.norm(x)
 
         return x, mask, ids_restore
+
+    def forward_decoder(self, x, ids_restore):
+        x = self.decoder_embed(x)
+        # append mask tokens to sequence
+        mask_tokens = self.mask_token.repeat(
+            x.shape[0], ids_restore.shape[1] + 1 - x.shape[1], 1)
+        x_ = torch.cat([x[:, 1:, :], mask_tokens], dim=1)  # no cls token
+        x_ = torch.gather(x_,
+                          dim=1,
+                          index=ids_restore.unsqueeze(-1).repeat(
+                              1, 1, x.shape[2]))  # unshuffle
+
+        x = torch.cat([x[:, :1, :], x_], dim=1)  # append cls token
+
+        # predictor projection
+        x = self.decoder_pred(x)
+        # remove cls token
+        x = x[:, 1:, :]
+        return x
 
     def forward_loss(self, imgs, pred, mask):
         """

@@ -127,25 +127,8 @@ class BlockWiseMasking:
 
 class RandomMasking:
 
-    def __init__(self,
-                 input_size,
-                 num_masking_patches,
-                 min_num_patches=4,
-                 max_num_patches=None,
-                 min_aspect=0.3,
-                 max_aspect=None):
-        if not isinstance(input_size, tuple):
-            input_size = (input_size, ) * 2
-        self.height, self.width = input_size
-
-        self.num_patches = self.height * self.width
-        self.num_masking_patches = num_masking_patches
-
-        self.min_num_patches = min_num_patches
-        self.max_num_patches = num_masking_patches if max_num_patches is None else max_num_patches
-
-        max_aspect = max_aspect or 1 / min_aspect
-        self.log_aspect_ratio = (math.log(min_aspect), math.log(max_aspect))
+    def __init__(self):
+        pass
 
     def __call__(self, x, mask_ratio):
         """
