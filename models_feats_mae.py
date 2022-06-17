@@ -1,6 +1,7 @@
-from turtle import forward
 import torch
 import torch.nn as nn
+
+from functools import partial
 
 from timm.models.vision_transformer import PatchEmbed, Block
 from util.pos_embed import get_2d_sincos_pos_embed
@@ -61,8 +62,7 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
 
         feats_len = self.feats.feats_len
-        self.decoder_pred = nn.Linear(decoder_embed_dim,
-                                      feats_len,
+        self.decoder_pred = nn.Linear(decoder_embed_dim, feats_len,
                                       bias=True)  # decoder to patch
         # --------------------------------------------------------------------------
 
@@ -146,7 +146,8 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         pred: [N, L, p*p*3]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
-        target = self.patchify(imgs)
+        target = self.feats(imgs)
+
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
             var = target.var(dim=-1, keepdim=True)
@@ -163,3 +164,108 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
         loss = self.forward_loss(imgs, pred, mask)
         return loss, pred, mask
+
+
+def mae_vit_base_patch16_dec512d8b(**kwargs):
+    model = MaskedFeatsAutoencoderViT(patch_size=16,
+                                      embed_dim=768,
+                                      depth=12,
+                                      num_heads=12,
+                                      decoder_embed_dim=512,
+                                      mlp_ratio=4,
+                                      norm_layer=partial(nn.LayerNorm,
+                                                         eps=1e-6),
+                                      **kwargs)
+    return model
+
+
+def mae_vit_large_patch16_dec512d8b(**kwargs):
+    model = MaskedFeatsAutoencoderViT(patch_size=16,
+                                      embed_dim=1024,
+                                      depth=24,
+                                      num_heads=16,
+                                      decoder_embed_dim=512,
+                                      mlp_ratio=4,
+                                      norm_layer=partial(nn.LayerNorm,
+                                                         eps=1e-6),
+                                      **kwargs)
+    return model
+
+
+def mae_vit_huge_patch14_dec512d8b(**kwargs):
+    model = MaskedFeatsAutoencoderViT(patch_size=14,
+                                      embed_dim=1280,
+                                      depth=32,
+                                      num_heads=16,
+                                      decoder_embed_dim=512,
+                                      mlp_ratio=4,
+                                      norm_layer=partial(nn.LayerNorm,
+                                                         eps=1e-6),
+                                      **kwargs)
+    return model
+
+
+BASE_PARAM = dict(patch_size=16,
+                  embed_dim=768,
+                  depth=12,
+                  num_heads=12,
+                  decoder_embed_dim=512,
+                  mlp_ratio=4,
+                  norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
+LARGE_PARAM = dict(patch_size=16,
+                   embed_dim=1024,
+                   depth=24,
+                   num_heads=16,
+                   decoder_embed_dim=512,
+                   mlp_ratio=4,
+                   norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
+HUGE_PARAM = dict(patch_size=14,
+                  embed_dim=1280,
+                  depth=32,
+                  num_heads=16,
+                  decoder_embed_dim=512,
+                  mlp_ratio=4,
+                  norm_layer=partial(nn.LayerNorm, eps=1e-6))
+
+
+# ind vit base models
+def mae_vit_base_img512_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 512
+    model = MaskedFeatsAutoencoderViT(**kwargs)
+    return model
+
+
+def mae_vit_base_img640_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 640
+    model = MaskedFeatsAutoencoderViT(**kwargs)
+    return model
+
+
+def mae_vit_base_img768_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 768
+    model = MaskedFeatsAutoencoderViT(**kwargs)
+    return model
+
+
+def mae_vit_base_img1024_patch16_dec512d8b(**kwargs):
+    kwargs.update(BASE_PARAM)
+    kwargs['img_size'] = 1024
+    model = MaskedFeatsAutoencoderViT(**kwargs)
+    return model
+
+
+# set recommended archs
+mae_vit_base_patch16 = mae_vit_base_patch16_dec512d8b  # decoder: 512 dim, 8 blocks
+mae_vit_large_patch16 = mae_vit_large_patch16_dec512d8b  # decoder: 512 dim, 8 blocks
+mae_vit_huge_patch14 = mae_vit_huge_patch14_dec512d8b  # decoder: 512 dim, 8 blocks
+
+# set ind private archs
+mae_vit_base_img512_patch16 = mae_vit_base_img512_patch16_dec512d8b
+mae_vit_base_img640_patch16 = mae_vit_base_img640_patch16_dec512d8b
+mae_vit_base_img768_patch16 = mae_vit_base_img768_patch16_dec512d8b
+mae_vit_base_img1024_patch16 = mae_vit_base_img1024_patch16_dec512d8b

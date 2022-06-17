@@ -50,6 +50,10 @@ class HOGTarget(BaseTarget):
         fd = feature.hog(target, **self.hog_params)
         return fd
 
+    def get_hog_map_torch(self, target):
+        fd = 0
+        return fd
+
     def __call__(self, target):
         feats = self.get_hog_map(target)
         return feats

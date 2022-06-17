@@ -1,4 +1,5 @@
 from collections import abc
+import time
 
 
 def is_seq_of(seq, expected_type, seq_type=None):
@@ -23,3 +24,14 @@ def is_seq_of(seq, expected_type, seq_type=None):
         if not isinstance(item, expected_type):
             return False
     return True
+
+
+def run_time(func):
+
+    def warp():
+        t1 = time()
+        func()
+        t2 = time()
+        print(t2 - t1)
+
+    return warp
