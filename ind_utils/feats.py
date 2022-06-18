@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 from skimage import feature, exposure
+from .misc import run_time
+import torch
 
 
 class BaseTarget:
@@ -19,7 +21,7 @@ class HOGTarget(BaseTarget):
                  hog_params=dict(orientations=9,
                                  pixels_per_cell=(8, 8),
                                  cells_per_block=(2, 2),
-                                 channel_axis=2)):
+                                 channel_axis=0)):
         self.img_size = img_size
         self.norm = norm
         self.gamma = gamma
@@ -43,17 +45,23 @@ class HOGTarget(BaseTarget):
 
         return feats_length
 
-    def get_hog_map(self, target):
+    def get_hog_map(self, img):
         if self.norm:
-            target = np.power(target / float(np.max(target)), self.gamma)
+            img = np.power(img / float(np.max(img)), self.gamma)
 
-        fd = feature.hog(target, **self.hog_params)
+        fd = feature.hog(img, **self.hog_params)
         return fd
 
-    def get_hog_map_torch(self, target):
-        fd = 0
-        return fd
-
+    # @run_time
     def __call__(self, target):
-        feats = self.get_hog_map(target)
+        if isinstance(target, torch.Tensor):
+            target = target.cpu().numpy()
+
+        feats = []
+        b, c, h, w = target.shape
+        for i in range(b):
+            img = target[i, ...]
+            feat = self.get_hog_map(img)
+            feats.append(feat)
+        feats = torch.from_numpy(np.array(feats))
         return feats

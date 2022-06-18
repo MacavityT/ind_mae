@@ -1,5 +1,5 @@
 from collections import abc
-import time
+from time import time
 
 
 def is_seq_of(seq, expected_type, seq_type=None):
@@ -28,10 +28,11 @@ def is_seq_of(seq, expected_type, seq_type=None):
 
 def run_time(func):
 
-    def warp():
-        t1 = time()
-        func()
-        t2 = time()
-        print(t2 - t1)
+    def wrapper(*args, **kwargs):
+        start = time()
+        output = func(*args, **kwargs)
+        end = time()
+        print(end - start)
+        return output
 
-    return warp
+    return wrapper

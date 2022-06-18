@@ -1,3 +1,5 @@
+import os
+import sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -160,11 +162,39 @@ class HOGLayerMoreComplicated(nn.Module):
         return out
 
 
+class Sobel(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.filter = nn.Conv2d(in_channels=1,
+                                out_channels=2,
+                                kernel_size=3,
+                                stride=1,
+                                padding=0,
+                                bias=False)
+
+        Gx = torch.tensor([[2.0, 0.0, -2.0], [4.0, 0.0, -4.0],
+                           [2.0, 0.0, -2.0]])
+        Gy = torch.tensor([[2.0, 4.0, 2.0], [0.0, 0.0, 0.0],
+                           [-2.0, -4.0, -2.0]])
+        G = torch.cat([Gx.unsqueeze(0), Gy.unsqueeze(0)], 0)
+        G = G.unsqueeze(1)
+        self.filter.weight = nn.Parameter(G, requires_grad=False)
+
+    def forward(self, img):
+        x = self.filter(img)
+        x = torch.mul(x, x)
+        x = torch.sum(x, dim=1, keepdim=True)
+        x = torch.sqrt(x)
+        return x
+
+
 if __name__ == '__main__':
     import cv2
+    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
     cuda = True
 
-    path = '/home/etienneperot/Pictures/pencils.jpg'
+    path = '/home/taiyan/penguin.jpg'
     im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 
     x = torch.from_numpy(im)[None, None]
@@ -173,12 +203,11 @@ if __name__ == '__main__':
     else:
         x = x.float()
 
-    hog = HOGLayer(nbins=9, pool=2)
+    hog = HOGLayer(nbins=9, pool=8)
     if cuda:
         hog = hog.cuda()
 
     y = hog(x)
-
     y2 = y.cpu().numpy()
     bin = 0
     while 1:
