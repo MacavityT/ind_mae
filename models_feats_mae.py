@@ -61,8 +61,8 @@ class MaskedFeatsAutoencoderViT(nn.Module):
 
         self.mask_token = nn.Parameter(torch.zeros(1, 1, decoder_embed_dim))
 
-        feats_len = self.feats.feats_len
-        self.decoder_pred = nn.Linear(decoder_embed_dim, feats_len,
+        self.decoder_pred = nn.Linear(decoder_embed_dim,
+                                      patch_size**2,
                                       bias=True)  # decoder to patch
         # --------------------------------------------------------------------------
 
@@ -98,6 +98,20 @@ class MaskedFeatsAutoencoderViT(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
+
+    def patchify(self, imgs):
+        """
+        imgs: (N, 1, H, W)
+        x: (N, L, patch_size**2)
+        """
+        p = self.patch_embed.patch_size[0]
+        assert imgs.shape[2] == imgs.shape[3] and imgs.shape[2] % p == 0
+
+        h = w = imgs.shape[2] // p
+        x = imgs.reshape(shape=(imgs.shape[0], 1, h, p, w, p))
+        x = torch.einsum('nchpwq->nhwpqc', x)
+        x = x.reshape(shape=(imgs.shape[0], h * w, p**2))
+        return x
 
     def forward_encoder(self, x, mask_ratio):
         # embed patches
@@ -143,10 +157,11 @@ class MaskedFeatsAutoencoderViT(nn.Module):
     def forward_loss(self, imgs, pred, mask):
         """
         imgs: [N, 3, H, W]
-        pred: [N, L, p*p*3]
+        pred: [N, L, p*p]
         mask: [N, L], 0 is keep, 1 is remove, 
         """
-        target = self.feats(imgs)
+        target = self.feats(imgs)  # [N, H, W]
+        target = self.patchify(target)
 
         if self.norm_pix_loss:
             mean = target.mean(dim=-1, keepdim=True)
