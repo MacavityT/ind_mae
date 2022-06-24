@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from skimage import feature, exposure
-from wandb import visualize
 from .misc import run_time
 import torch
 
@@ -23,7 +22,7 @@ class HOGTarget(BaseTarget):
                  hog_params=dict(orientations=9,
                                  pixels_per_cell=(8, 8),
                                  cells_per_block=(2, 2),
-                                 channel_axis=0,
+                                 multichannel=True,
                                  visualize=True)):
         self.img_size = img_size
         self.patch_size = patch_size,
@@ -50,6 +49,7 @@ class HOGTarget(BaseTarget):
         return feats_length
 
     def get_hog_map(self, img):
+        img = np.transpose(img, (1, 2, 0))  # [h,w,c]
         if self.norm:
             img = np.power(img / float(np.max(img)), self.gamma)
 
