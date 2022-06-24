@@ -4,4 +4,4 @@
 4. get_txt_pretrain: 生成全部数据集的train.txt文件
 5. slide_split_datasets: 多线程切分图像224*224
 6. check_dataset: 用于检查数据集dataloader是否正常
-7. img_similarity：检查爬虫数据爬取到的图片相似度
+7. img_similarity：遍历爬虫数据集末端目录，在每个末端目录中构建hash池并得到重复图片路径保存至txt

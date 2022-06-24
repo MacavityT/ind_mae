@@ -24,13 +24,14 @@ import torchvision.datasets as datasets
 
 import timm
 
-assert timm.__version__ == "0.3.2"  # version check
+# assert timm.__version__ == "0.3.2"  # version check
 import timm.optim.optim_factory as optim_factory
 
 import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_mae
+import models_feats_mae
 
 from engine_pretrain import train_one_epoch
 from ind_utils.ind_dataset import IndustryPretrainDataset
@@ -180,10 +181,12 @@ def main(args):
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     ])
-    # dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
-    dataset_train = IndustryPretrainDataset(root=args.data_path,
-                                            ann_file='train.txt',
-                                            transform=transform_train)
+    dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'),
+                                         transform=transform_train)
+
+    # dataset_train = IndustryPretrainDataset(root=args.data_path,
+    #                                         ann_file='train.txt',
+    #                                         transform=transform_train)
 
     print(dataset_train)
 
@@ -215,7 +218,9 @@ def main(args):
     )
 
     # define the model
-    model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+    # model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+    model = models_feats_mae.__dict__[args.model](
+        norm_pix_loss=args.norm_pix_loss)
 
     model.to(device)
 
@@ -263,7 +268,7 @@ def main(args):
                                       loss_scaler,
                                       log_writer=log_writer,
                                       args=args)
-        if args.output_dir and (epoch % 20 == 0 or epoch + 1 == args.epochs):
+        if args.output_dir and (epoch % 5 == 0 or epoch + 1 == args.epochs):
             misc.save_model(args=args,
                             model=model,
                             model_without_ddp=model_without_ddp,

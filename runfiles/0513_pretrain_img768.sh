@@ -30,7 +30,7 @@ python -m torch.distributed.launch \
     --warmup_epochs 40 \
     --blr 1.5e-4 --weight_decay 0.05 \
     --data_path $(dirname "$0")/../ind_data/ \
-    --resume $(dirname "$0")/../ind_models/$NAME/checkpoint-60.pth
+    --resume $(dirname "$0")/../ind_models/$NAME/checkpoint-75.pth
 
 # Training instruction (2 Nodes)
 #   First machine: 
