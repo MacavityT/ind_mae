@@ -1,10 +1,21 @@
 import os
 import pandas as pd
 import numpy as np
+from PIL import Image
 
 import torch
 from torch.utils.data import Dataset
 from torchvision.datasets.folder import default_loader
+
+from timm.data import create_transform
+from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+"""
+The models can be trained in four different "training modes", based on the type of classifier is wanted:
+- training_mode = e2e: An end-to-end classifier is trained on all the data with multi-label annotations.
+- training_mode = binary: A binary classifier is trained on all the data with binary defect annotations.
+- training_mode = defect: A defect classifier is trained on just the data with defects occuring, with multi-label annotations.
+- training_mode = binaryrelevance: A binary classifier is trained on the data with just the defect denoted in the "br_defect" argument.
+"""
 
 Labels = [
     "RB",
@@ -29,7 +40,7 @@ Labels = [
 ]
 
 
-class MultiLabelDataset(Dataset):
+class SewerMultiLabelDataset(Dataset):
 
     def __init__(
         self,
@@ -40,7 +51,7 @@ class MultiLabelDataset(Dataset):
         loader=default_loader,
         onlyDefects=False,
     ):
-        super(MultiLabelDataset, self).__init__()
+        super(SewerMultiLabelDataset, self).__init__()
         self.imgRoot = imgRoot
         self.annRoot = annRoot
         self.split = split
@@ -86,7 +97,7 @@ class MultiLabelDataset(Dataset):
 
         target = self.labels[index, :]
 
-        return img, target, path
+        return img, target
 
     def getClassWeights(self):
         data_len = self.labels.shape[0]
@@ -102,7 +113,7 @@ class MultiLabelDataset(Dataset):
         return torch.as_tensor(class_weights).squeeze()
 
 
-class MultiLabelDatasetInference(Dataset):
+class SewerMultiLabelDatasetInference(Dataset):
 
     def __init__(
         self,
@@ -113,7 +124,7 @@ class MultiLabelDatasetInference(Dataset):
         loader=default_loader,
         onlyDefects=False,
     ):
-        super(MultiLabelDatasetInference, self).__init__()
+        super(SewerMultiLabelDatasetInference, self).__init__()
         self.imgRoot = imgRoot
         self.annRoot = annRoot
         self.split = split
@@ -153,7 +164,7 @@ class MultiLabelDatasetInference(Dataset):
         return img, path
 
 
-class BinaryRelevanceDataset(Dataset):
+class SewerBinaryRelevanceDataset(Dataset):
 
     def __init__(
         self,
@@ -164,7 +175,7 @@ class BinaryRelevanceDataset(Dataset):
         loader=default_loader,
         defect=None,
     ):
-        super(BinaryRelevanceDataset, self).__init__()
+        super(SewerBinaryRelevanceDataset, self).__init__()
         self.imgRoot = imgRoot
         self.annRoot = annRoot
         self.split = split
@@ -207,7 +218,7 @@ class BinaryRelevanceDataset(Dataset):
 
         target = self.labels[index]
 
-        return img, target, path
+        return img, target
 
     def getClassWeights(self):
         pos_count = len(self.labels[self.labels == 1])
@@ -217,7 +228,7 @@ class BinaryRelevanceDataset(Dataset):
         return torch.as_tensor(class_weight)
 
 
-class BinaryDataset(Dataset):
+class SewerBinaryDataset(Dataset):
 
     def __init__(self,
                  annRoot,
@@ -225,7 +236,7 @@ class BinaryDataset(Dataset):
                  split="Train",
                  transform=None,
                  loader=default_loader):
-        super(BinaryDataset, self).__init__()
+        super(SewerBinaryDataset, self).__init__()
         self.imgRoot = imgRoot
         self.annRoot = annRoot
         self.split = split
@@ -262,7 +273,7 @@ class BinaryDataset(Dataset):
 
         target = self.labels[index]
 
-        return img, target, path
+        return img, target
 
     def getClassWeights(self):
         pos_count = len(self.labels[self.labels == 1])
@@ -270,6 +281,65 @@ class BinaryDataset(Dataset):
         class_weight = np.asarray([neg_count / pos_count])
 
         return torch.as_tensor(class_weight)
+
+
+def build_sewer_dataset(args, **kwargs):
+    '''
+    kwargs = dict(dataset = str,
+                  split = str, 
+                  defect = str, 
+                  onlyDefects = bool)
+    '''
+    ds = kwargs['dataset']
+    split = kwargs['split']
+    ann_root = os.path.join(args.data_path, 'annotations')
+    img_root = os.path.join(args.data_path, 'images', split.lower())
+
+    transform = build_transform(True if split == 'Train' else False, args)
+    dataset = __dict__[ds](annRoot=ann_root,
+                           imgRoot=img_root,
+                           transform=transform,
+                           **kwargs)
+    print(dataset)
+    return dataset
+
+
+def build_transform(is_train, args):
+    mean = IMAGENET_DEFAULT_MEAN
+    std = IMAGENET_DEFAULT_STD
+    # train transform
+    if is_train:
+        # this should always dispatch to transforms_imagenet_train
+        transform = create_transform(
+            input_size=args.input_size,
+            is_training=True,
+            color_jitter=args.color_jitter,
+            auto_augment=args.aa,
+            interpolation='bicubic',
+            re_prob=args.reprob,
+            re_mode=args.remode,
+            re_count=args.recount,
+            mean=mean,
+            std=std,
+        )
+        return transform
+
+    # eval transform
+    t = []
+    if args.input_size <= 224:
+        crop_pct = 224 / 256
+    else:
+        crop_pct = 1.0
+    size = int(args.input_size / crop_pct)
+    t.append(
+        transforms.Resize(size, interpolation=Image.BICUBIC
+                          ),  # to maintain same ratio w.r.t. 224 images
+    )
+    t.append(transforms.CenterCrop(args.input_size))
+
+    t.append(transforms.ToTensor())
+    t.append(transforms.Normalize(mean, std))
+    return transforms.Compose(t)
 
 
 if __name__ == "__main__":
@@ -280,32 +350,32 @@ if __name__ == "__main__":
         [transforms.Resize((224, 224)),
          transforms.ToTensor()])
 
-    train = MultiLabelDataset(
+    train = SewerMultiLabelDataset(
         annRoot="/mnt/tmp/SewerML/annotations",
         imgRoot="/mnt/tmp/SewerML/images/train",
         split="Train",
         transform=transform,
     )
-    train_defect = MultiLabelDataset(
+    train_defect = SewerMultiLabelDataset(
         annRoot="/mnt/tmp/SewerML/annotations",
         imgRoot="/mnt/tmp/SewerML/images/train",
         split="Train",
         transform=transform,
         onlyDefects=True,
     )
-    train_inference = MultiLabelDatasetInference(
+    train_inference = SewerMultiLabelDatasetInference(
         annRoot="/mnt/tmp/SewerML/annotations",
         imgRoot="/mnt/tmp/SewerML/images/train",
         split="Train",
         transform=transform,
     )
-    binary_train = BinaryDataset(
+    binary_train = SewerBinaryDataset(
         annRoot="/mnt/tmp/SewerML/annotations",
         imgRoot="/mnt/tmp/SewerML/images/train",
         split="Train",
         transform=transform,
     )
-    binary_relevance_train = BinaryRelevanceDataset(
+    binary_relevance_train = SewerBinaryRelevanceDataset(
         annRoot="/mnt/tmp/SewerML/annotations",
         imgRoot="/mnt/tmp/SewerML/images/train",
         split="Train",

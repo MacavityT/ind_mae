@@ -26,11 +26,10 @@ import timm
 # assert timm.__version__ == "0.3.2"  # version check
 from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
+from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
 
 import util.lr_decay as lrd
 import util.misc as misc
-from util.datasets import build_dataset, build_ind_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
@@ -315,19 +314,11 @@ def main(args):
 
     cudnn.benchmark = True
 
-    # vanilla ImageNet dataset
-    dataset_train = build_dataset(is_train=True, args=args)
-    dataset_val = build_dataset(is_train=False, args=args)
-
-    # # industry datasets
-    # dataset_train = build_ind_dataset(is_train=True, args=args)
-    # dataset_val = build_ind_dataset(is_train=False, args=args)
-
-    # # cls task: sewer-ml datasets
-    # sewer_params_train = dict(dataset='SewerBinaryDataset', split='Train')
-    # sewer_params_val = dict(dataset='SewerBinaryDataset', split='Val')
-    # dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
-    # dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
+    # cls task: sewer-ml datasets
+    sewer_params_train = dict(dataset='SewerBinaryDataset', split='Train')
+    sewer_params_val = dict(dataset='SewerBinaryDataset', split='Val')
+    dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
+    dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
@@ -467,13 +458,15 @@ def main(args):
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
     loss_scaler = NativeScaler()
 
-    if mixup_fn is not None:
-        # smoothing is handled with mixup label transform
-        criterion = SoftTargetCrossEntropy()
-    elif args.smoothing > 0.0:
-        criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    else:
-        criterion = torch.nn.CrossEntropyLoss()
+    # if mixup_fn is not None:
+    #     # smoothing is handled with mixup label transform
+    #     criterion = SoftTargetCrossEntropy()
+    # elif args.smoothing > 0.0:
+    #     criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+    # else:
+    #     criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.BCEWithLogitsLoss(
+        pos_weight=dataset_train.class_weights)
 
     print("criterion = %s" % str(criterion))
 
