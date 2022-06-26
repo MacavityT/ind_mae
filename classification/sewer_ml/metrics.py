@@ -3,9 +3,12 @@ import numpy as np
 
 def average_precision(scores, target, max_k=None):
 
-    assert scores.shape == target.shape, "The input and targets do not have the same shape"
-    assert scores.ndim == 1, "The input has dimension {}, but expected it to be 1D".format(
-        scores.shape)
+    assert (
+        scores.shape == target.shape
+    ), "The input and targets do not have the same shape"
+    assert (
+        scores.ndim == 1
+    ), "The input has dimension {}, but expected it to be 1D".format(scores.shape)
 
     # sort examples
     indices = np.argsort(scores, axis=0)[::-1]
@@ -16,9 +19,9 @@ def average_precision(scores, target, max_k=None):
         max_k = len(indices)
 
     # Computes prec@i
-    pos_count = 0.
-    total_count = 0.
-    precision_at_i = 0.
+    pos_count = 0.0
+    total_count = 0.0
+    precision_at_i = 0.0
 
     for i in range(max_k):
         label = target[indices[i]]
@@ -106,14 +109,16 @@ def class_weighted_f2(Ng, Np, Nc, weights, threshold=0.5):
 
 def evaluation(scores, targets, weights, threshold=0.5):
 
-    assert scores.shape == targets.shape, "The input and targets do not have the same size: Input: {} - Targets: {}".format(
-        scores.shape, targets.shape)
+    assert (
+        scores.shape == targets.shape
+    ), "The input and targets do not have the same size: Input: {} - Targets: {}".format(
+        scores.shape, targets.shape
+    )
 
     _, n_class = scores.shape
 
     # Arrays to hold binary classification information, size n_class +1 to also hold the implicit normal class
-    Nc = np.zeros(n_class +
-                  1)  # Nc = Number of Correct Predictions  - True positives
+    Nc = np.zeros(n_class + 1)  # Nc = Number of Correct Predictions  - True positives
     Np = np.zeros(
         n_class + 1
     )  # Np = Total number of Predictions    - True positives + False Positives
@@ -131,8 +136,8 @@ def evaluation(scores, targets, weights, threshold=0.5):
         tmp_scores = scores[:, k]
         tmp_targets = targets[:, k]
         tmp_targets[
-            tmp_targets ==
-            -1] = 0  # Necessary if using MultiLabelSoftMarginLoss, instead of BCEWithLogitsLoss
+            tmp_targets == -1
+        ] = 0  # Necessary if using MultiLabelSoftMarginLoss, instead of BCEWithLogitsLoss
 
         Ng[k] = np.sum(tmp_targets == 1)
         Np[k] = np.sum(
@@ -149,8 +154,8 @@ def evaluation(scores, targets, weights, threshold=0.5):
 
     tmp_targets = targets.copy()
     tmp_targets[
-        targets ==
-        -1] = 0  # Necessary if using MultiLabelSoftMarginLoss, instead of BCEWithLogitsLoss
+        targets == -1
+    ] = 0  # Necessary if using MultiLabelSoftMarginLoss, instead of BCEWithLogitsLoss
     tmp_targets = np.sum(tmp_targets, axis=1)
     tmp_targets[tmp_targets > 0] = 1
     tmp_targets = np.abs(tmp_targets - 1)
@@ -180,15 +185,19 @@ def evaluation(scores, targets, weights, threshold=0.5):
     # Mean Average Precision (mAP)
     mAP = mean_average_precision(ap)
 
-    F2, F2_k, = class_weighted_f2(Ng[:-1], Np[:-1], Nc[:-1], weights)
+    (
+        F2,
+        F2_k,
+    ) = class_weighted_f2(Ng[:-1], Np[:-1], Nc[:-1], weights)
 
-    F2_normal = (5 * precision_k[-1] * recall_k[-1]) / (4 * precision_k[-1] +
-                                                        recall_k[-1])
+    F2_normal = (5 * precision_k[-1] * recall_k[-1]) / (
+        4 * precision_k[-1] + recall_k[-1]
+    )
 
     new_metrics = {
         "F2": F2,
         "F2_class": list(F2_k) + [F2_normal],
-        "F1_Normal": F1_k[-1]
+        "F1_Normal": F1_k[-1],
     }
 
     main_metrics = {
@@ -201,7 +210,7 @@ def evaluation(scores, targets, weights, threshold=0.5):
         "MF1": MF1,
         "mF1": mF1,
         "EMAcc": EMAcc,
-        "mAP": mAP
+        "mAP": mAP,
     }
 
     auxillery_metrics = {
@@ -211,7 +220,7 @@ def evaluation(scores, targets, weights, threshold=0.5):
         "AP": list(ap),
         "Np": list(Np),
         "Nc": list(Nc),
-        "Ng": list(Ng)
+        "Ng": list(Ng),
     }
 
     return new_metrics, main_metrics, auxillery_metrics
