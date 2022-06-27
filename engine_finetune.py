@@ -37,7 +37,8 @@ def train_one_epoch(
 ):
     model.train(True)
     metric_logger = misc.MetricLogger(delimiter="  ")
-    metric_logger.add_meter("lr", misc.SmoothedValue(window_size=1, fmt="{value:.6f}"))
+    metric_logger.add_meter(
+        "lr", misc.SmoothedValue(window_size=1, fmt="{value:.6f}"))
     header = "Epoch: [{}]".format(epoch)
     print_freq = 20
 
@@ -49,14 +50,12 @@ def train_one_epoch(
         print("log_dir: {}".format(log_writer.log_dir))
 
     for data_iter_step, (samples, targets) in enumerate(
-        metric_logger.log_every(data_loader, print_freq, header)
-    ):
+            metric_logger.log_every(data_loader, print_freq, header)):
 
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(
-                optimizer, data_iter_step / len(data_loader) + epoch, args
-            )
+                optimizer, data_iter_step / len(data_loader) + epoch, args)
 
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
@@ -65,6 +64,8 @@ def train_one_epoch(
             samples, targets = mixup_fn(samples, targets)
 
         with torch.cuda.amp.autocast():
+            targets = targets.type_as(
+                samples)  # manually added for align the targets format
             outputs = model(samples)
             loss = criterion(outputs, targets)
 
@@ -102,7 +103,8 @@ def train_one_epoch(
             """We use epoch_1000x as the x-axis in tensorboard.
             This calibrates different curves when batch size changes.
             """
-            epoch_1000x = int((data_iter_step / len(data_loader) + epoch) * 1000)
+            epoch_1000x = int(
+                (data_iter_step / len(data_loader) + epoch) * 1000)
             log_writer.add_scalar("loss", loss_value_reduce, epoch_1000x)
             log_writer.add_scalar("lr", max_lr, epoch_1000x)
 
@@ -139,22 +141,20 @@ def evaluate(data_loader, model, device, topk=(1, 5)):
 
             metric_logger.meters["acc1"].update(acc[0].item(), n=batch_size)
             if topk == (1, 5):
-                metric_logger.meters["acc5"].update(acc[1].item(), n=batch_size)
+                metric_logger.meters["acc5"].update(acc[1].item(),
+                                                    n=batch_size)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     if topk == (1, 5):
         print(
-            "* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}".format(
+            "* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}"
+            .format(
                 top1=metric_logger.acc1,
                 top5=metric_logger.acc5,
                 losses=metric_logger.loss,
-            )
-        )
-    if topk == (1,):
-        print(
-            "* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}".format(
-                top1=metric_logger.acc1, losses=metric_logger.loss
-            )
-        )
+            ))
+    if topk == (1, ):
+        print("* Acc@1 {top1.global_avg:.3f} loss {losses.global_avg:.3f}".
+              format(top1=metric_logger.acc1, losses=metric_logger.loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

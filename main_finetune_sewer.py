@@ -14,6 +14,7 @@ import datetime
 import json
 import numpy as np
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -25,9 +26,6 @@ import timm
 
 # assert timm.__version__ == "0.3.2"  # version check
 from timm.models.layers import trunc_normal_
-from timm.data.mixup import Mixup
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy, BinaryCrossEntropy
-
 import util.lr_decay as lrd
 import util.misc as misc
 from util.pos_embed import interpolate_pos_embed
@@ -235,9 +233,6 @@ def get_args_parser():
         type=str,
         help="dataset path",
     )
-    parser.add_argument("--img_prefix",
-                        action="store_true",
-                        help="add train/val folder after root path")
     parser.add_argument(
         "--nb_classes",
         default=1000,
@@ -299,7 +294,7 @@ def get_args_parser():
 
 
 def main(args):
-    topk = (1, 5)
+    topk = (1, )
     misc.init_distributed_mode(args)
 
     print("job dir: {}".format(os.path.dirname(os.path.realpath(__file__))))
@@ -373,17 +368,7 @@ def main(args):
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0.0 or args.cutmix_minmax is not None
     if mixup_active:
-        print("Mixup is activated!")
-        mixup_fn = Mixup(
-            mixup_alpha=args.mixup,
-            cutmix_alpha=args.cutmix,
-            cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob,
-            switch_prob=args.mixup_switch_prob,
-            mode=args.mixup_mode,
-            label_smoothing=args.smoothing,
-            num_classes=args.nb_classes,
-        )
+        print("Sewer-ML Dataset do not support mixup!")
 
     model = models_vit.__dict__[args.model](
         num_classes=args.nb_classes,
@@ -458,15 +443,10 @@ def main(args):
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
     loss_scaler = NativeScaler()
 
-    # if mixup_fn is not None:
-    #     # smoothing is handled with mixup label transform
-    #     criterion = SoftTargetCrossEntropy()
-    # elif args.smoothing > 0.0:
-    #     criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    # else:
-    #     criterion = torch.nn.CrossEntropyLoss()
+    # criterion = torch.nn.MultiLabelSoftMarginLoss(
+    #     weight=dataset_train.class_weight)
     criterion = torch.nn.BCEWithLogitsLoss(
-        pos_weight=dataset_train.class_weights)
+        pos_weight=dataset_train.class_weights.to(device, non_blocking=True))
 
     print("criterion = %s" % str(criterion))
 
@@ -550,6 +530,18 @@ def main(args):
 
 
 if __name__ == "__main__":
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    sys.argv = [
+        '/home/taiyan/ind_projects/mae/main_finetune_sewer.py', '--output_dir',
+        '/home/taiyan/ind_projects/mae/ind_models/debug', '--log_dir',
+        '/home/taiyan/ind_projects/mae/ind_models/debug', '--finetune',
+        '/home/taiyan/models/pretrain/mae/checkpoint-199.pth', '--data_path',
+        '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--nb_classes', '1',
+        '--accum_iter', '7', '--batch_size', '24', '--input_size', '224',
+        '--model', 'vit_base_patch16', '--epochs', '100', '--blr', '5e-4',
+        '--layer_decay', '0.65', '--weight_decay', '0.05', '--drop_path',
+        '0.1', '--reprob', '0.25'
+    ]
     args = get_args_parser()
     args = args.parse_args()
     if args.output_dir:

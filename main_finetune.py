@@ -39,7 +39,6 @@ import models_vit
 from engine_finetune import train_one_epoch, evaluate
 
 # from ind_utils.builder import build_ind_dataset
-from classification.sewer_ml import build_sewer_dataset
 
 
 def get_args_parser():
@@ -322,12 +321,6 @@ def main(args):
     # # industry datasets
     # dataset_train = build_ind_dataset(is_train=True, args=args)
     # dataset_val = build_ind_dataset(is_train=False, args=args)
-
-    # # cls task: sewer-ml datasets
-    # sewer_params_train = dict(dataset='SewerBinaryDataset', split='Train')
-    # sewer_params_val = dict(dataset='SewerBinaryDataset', split='Val')
-    # dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
-    # dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
