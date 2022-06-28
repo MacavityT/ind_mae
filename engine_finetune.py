@@ -52,8 +52,9 @@ def train_one_epoch(
     for data_iter_step, (samples, targets) in enumerate(
             metric_logger.log_every(data_loader, print_freq, header)):
 
-        if data_iter_step == 100:
-            break
+        # # just for debugging
+        # if data_iter_step == 100:
+        #     break
 
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
