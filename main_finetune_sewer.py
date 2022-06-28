@@ -17,6 +17,7 @@ import os
 import sys
 import time
 from pathlib import Path
+from pyparsing import Iterable
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -33,9 +34,9 @@ from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_vit
 
-from engine_finetune import train_one_epoch, evaluate
+from engine_finetune import train_one_epoch
 
-from classification.sewer_ml import build_sewer_dataset
+from classification.sewer_ml import build_sewer_dataset, sewer_evaluate
 
 
 def get_args_parser():
@@ -457,10 +458,23 @@ def main(args):
     )
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device, topk=topk)
+        results = sewer_evaluate(data_loader_val, model, device)
+
+        print_info = ''
+        for k, v in results.items():
+            if isinstance(v, Iterable):
+                new_v = []
+                for e in v:
+                    e = '{:.2f}'.format(e)
+                    new_v.append(e)
+                v = new_v
+            else:
+                v = '{:.2f}'.format(v)
+            print_info += '{}: {}\n'.format(k, v)
+
         print(
-            f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
-        )
+            f"Metrics of the network on the {len(dataset_val)} test images:\n"
+            + print_info)
         exit(0)
 
     print(f"Start training for {args.epochs} epochs")
@@ -492,18 +506,27 @@ def main(args):
                 epoch=epoch,
             )
 
-        test_stats = evaluate(data_loader_val, model, device, topk=topk)
+        test_stats = sewer_evaluate(data_loader_val, model, device)
+        print_info = ''
+        for k, v in test_stats.items():
+            if isinstance(v, Iterable):
+                new_v = []
+                for e in v:
+                    e = '{:.2f}'.format(e)
+                    new_v.append(e)
+                v = new_v
+            else:
+                v = '{:.2f}'.format(v)
+            print_info += '{}: {}\n'.format(k, v)
+
         print(
-            f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
-        )
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print(f"Max accuracy: {max_accuracy:.2f}%")
+            f"Metrics of the network on the {len(dataset_val)} test images:\n"
+            + print_info)
+
+        # max_accuracy = max(max_accuracy, test_stats["acc1"])
+        # print(f"Max accuracy: {max_accuracy:.2f}%")
 
         if log_writer is not None:
-            log_writer.add_scalar("perf/test_acc1", test_stats["acc1"], epoch)
-            if topk == (1, 5):
-                log_writer.add_scalar("perf/test_acc5", test_stats["acc5"],
-                                      epoch)
             log_writer.add_scalar("perf/test_loss", test_stats["loss"], epoch)
 
         log_stats = {
@@ -529,7 +552,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
     # sys.argv = [
     #     '/home/taiyan/ind_projects/mae/main_finetune_sewer.py', '--output_dir',
     #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--log_dir',

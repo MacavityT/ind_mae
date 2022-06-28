@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
 # export CUDA_VISIBLE_DEVICES=4,5,6,7
-GPUS=8
+GPUS=4
 PORT=${PORT:-29500}
 NAME=0626_finetune_sewer
 
@@ -12,7 +12,7 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
     --finetune /home/taiyan/models/pretrain/mae/checkpoint-199.pth \
     --nb_classes 1 \
-    --accum_iter 4 \
+    --accum_iter 8 \
     --batch_size 32 \
     --input_size 224 \
     --model vit_base_patch16 \

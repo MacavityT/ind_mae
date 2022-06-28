@@ -52,6 +52,9 @@ def train_one_epoch(
     for data_iter_step, (samples, targets) in enumerate(
             metric_logger.log_every(data_loader, print_freq, header)):
 
+        if data_iter_step == 100:
+            break
+
         # we use a per iteration (instead of per epoch) lr scheduler
         if data_iter_step % accum_iter == 0:
             lr_sched.adjust_learning_rate(
@@ -65,7 +68,8 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             targets = targets.type_as(
-                samples)  # manually added for align the targets format
+                samples
+            )  # sewer-ml: manually added for align the targets format
             outputs = model(samples)
             loss = criterion(outputs, targets)
 
