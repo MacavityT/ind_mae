@@ -310,8 +310,9 @@ def main(args):
     cudnn.benchmark = True
 
     # cls task: sewer-ml datasets
-    sewer_params_train = dict(dataset='SewerBinaryDataset', split='Train')
-    sewer_params_val = dict(dataset='SewerBinaryDataset', split='Val')
+    sewer_params_train = dict(dataset='SewerMultiLabelDataset', split='Train')
+    sewer_params_val = dict(dataset='SewerMultiLabelDataset', split='Val')
+
     dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
     dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
 
@@ -370,6 +371,10 @@ def main(args):
     if mixup_active:
         print("Sewer-ML Dataset do not support mixup!")
 
+    if args.nb_classes != dataset_train.num_classes:
+        raise ValueError(
+            f'The input "nb_classes" = {args.nb_classes} must be equal to "dataset_train.num_classes" = {dataset_train.num_classes}'
+        )
     model = models_vit.__dict__[args.model](
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
