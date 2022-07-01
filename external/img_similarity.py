@@ -299,28 +299,28 @@ def mv_repeat_file(del_txt, old_path, new_path):
 
 
 if __name__ == "__main__":
-    # # 计算两张图片相似度
-    # p1 = "https://ww3.sinaimg.cn/bmiddle/007INInDly1g336j2zziwj30su0g848w.jpg"
-    # p2 = "https://ww2.sinaimg.cn/bmiddle/007INInDly1g336j10d32j30vd0hnam6.jpg"
-    # runAllImageSimilaryFun(p1, p2)
+    # 计算两张图片相似度
+    p1 = "https://ww3.sinaimg.cn/bmiddle/007INInDly1g336j2zziwj30su0g848w.jpg"
+    p2 = "https://ww2.sinaimg.cn/bmiddle/007INInDly1g336j10d32j30vd0hnam6.jpg"
+    runAllImageSimilaryFun(p1, p2)
 
-    # # 遍历爬虫目录，输出重复文件路径和有效文件路径至txt
-    # dataset_path = '/mnt/tmp/爬虫数据集/'
-    # hash_func = dHash
-    # del_list, val_list = aHash_trav(dataset_path, hash_func)
+    # 遍历爬虫目录，输出重复文件路径和有效文件路径至txt
+    dataset_path = '/mnt/tmp/爬虫数据集/'
+    hash_func = dHash
+    del_list, val_list = aHash_trav(dataset_path, hash_func)
 
-    # with open(osp.join(dataset_path, 'del_list.txt'), 'ab') as f:
-    #     tbar = trange(len(del_list))
-    #     for name in del_list:
-    #         f.write((name + '\n').encode('utf-8'))
-    #         tbar.update()
-    # with open(osp.join(dataset_path, 'val_list.txt'), 'ab') as f:
-    #     tbar = trange(len(val_list))
-    #     for name in val_list:
-    #         f.write((name + '\n').encode('utf-8'))
-    #         tbar.update()
+    with open(osp.join(dataset_path, 'del_list.txt'), 'ab') as f:
+        tbar = trange(len(del_list))
+        for name in del_list:
+            f.write((name + '\n').encode('utf-8'))
+            tbar.update()
+    with open(osp.join(dataset_path, 'val_list.txt'), 'ab') as f:
+        tbar = trange(len(val_list))
+        for name in val_list:
+            f.write((name + '\n').encode('utf-8'))
+            tbar.update()
 
-    del_txt = '/mnt/tmp/爬虫数据集/del_list.txt'
-    old_path = '/mnt/tmp/爬虫数据集/'
-    new_path = '/mnt/tmp/爬虫数据集重复文件/'
-    mv_repeat_file(del_txt, old_path, new_path)
+    # del_txt = '/mnt/tmp/爬虫数据集/del_list.txt'
+    # old_path = '/mnt/tmp/爬虫数据集/'
+    # new_path = '/mnt/tmp/爬虫数据集重复文件/'
+    # mv_repeat_file(del_txt, old_path, new_path)

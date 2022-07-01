@@ -16,7 +16,7 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --batch_size 32 \
     --input_size 224 \
     --model vit_base_patch16 \
-    --epochs 100 \
+    --epochs 12 \
     --blr 5e-4 --layer_decay 0.65 \
     --weight_decay 0.05 --drop_path 0.1 --reprob 0.25 \
     --dist_eval \
