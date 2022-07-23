@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
 # export CUDA_VISIBLE_DEVICES=4,5,6,7
-GPUS=1
+GPUS=6
 PORT=${PORT:-29500}
 NAME="$(basename $0 .sh)"
 
