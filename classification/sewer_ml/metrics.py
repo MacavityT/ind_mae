@@ -254,58 +254,6 @@ def evaluation(scores, targets, threshold=0.5, weights=None):
     return new_metrics, main_metrics, auxillery_metrics
 
 
-def collect_results_gpu(result_part, size):
-    """Collect results under gpu mode.
-
-    On gpu mode, this function will encode results to gpu tensors and use gpu
-    communication for results collection.
-
-    Args:
-        result_part (list): Result list containing result parts
-            to be collected.
-        size (int): Size of the results, commonly equal to length of
-            the results.
-
-    Returns:
-        list: The collected results.
-    """
-    rank = misc.get_rank()
-    world_size = misc.get_world_size()
-    # dump result part to tensor with pickle
-    part_tensor = torch.tensor(bytearray(pickle.dumps(result_part)),
-                               dtype=torch.uint8,
-                               device='cuda')
-    # gather all result part tensor shape
-    shape_tensor = torch.tensor(part_tensor.shape, device='cuda')
-    shape_list = [shape_tensor.clone() for _ in range(world_size)]
-    dist.all_gather(shape_list, shape_tensor)
-    # padding result part tensor to max length
-    shape_max = torch.tensor(shape_list).max()
-    part_send = torch.zeros(shape_max, dtype=torch.uint8, device='cuda')
-    part_send[:shape_tensor[0]] = part_tensor
-    part_recv_list = [
-        part_tensor.new_zeros(shape_max) for _ in range(world_size)
-    ]
-    # gather all result part
-    dist.all_gather(part_recv_list, part_send)
-
-    if rank == 0:
-        part_list = []
-        for recv, shape in zip(part_recv_list, shape_list):
-            part_result = pickle.loads(recv[:shape[0]].cpu().numpy().tobytes())
-            # When data is severely insufficient, an empty part_result
-            # on a certain gpu could makes the overall outputs empty.
-            if part_result:
-                part_list.append(part_result)
-        # sort the results
-        ordered_results = []
-        for res in zip(*part_list):
-            ordered_results.extend(list(res))
-        # the dataloader may pad some samples
-        ordered_results = ordered_results[:size]
-        return ordered_results
-
-
 @torch.no_grad()
 def sewer_evaluate(data_loader, model, device):
     criterion = torch.nn.BCEWithLogitsLoss(
