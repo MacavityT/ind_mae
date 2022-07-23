@@ -3,7 +3,7 @@
 # export CUDA_VISIBLE_DEVICES=4,5,6,7
 GPUS=6
 PORT=${PORT:-29500}
-NAME=0422_pretrain
+NAME="$(basename $0 .sh)"
 
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
 python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
