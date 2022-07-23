@@ -67,6 +67,20 @@ def get_args_parser():
         help="Name of model to train",
     )
 
+    # Dataset parameters
+    parser.add_argument('--ds_mode',
+                        type=str,
+                        default="e2e",
+                        choices=["e2e", "binary", "binaryrelevance", "defect"])
+    parser.add_argument('--br_defect',
+                        type=str,
+                        default=None,
+                        choices=[
+                            None, "RB", "OB", "PF", "DE", "FS", "IS", "RO",
+                            "IN", "AF", "BE", "FO", "GR", "PH", "PB", "OS",
+                            "OP", "OK"
+                        ])
+
     parser.add_argument("--input_size",
                         default=224,
                         type=int,
@@ -310,11 +324,8 @@ def main(args):
     cudnn.benchmark = True
 
     # cls task: sewer-ml datasets
-    sewer_params_train = dict(dataset='SewerMultiLabelDataset', split='Train')
-    sewer_params_val = dict(dataset='SewerMultiLabelDataset', split='Val')
-
-    dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
-    dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
+    dataset_train = build_sewer_dataset(args=args, split='Train')
+    dataset_val = build_sewer_dataset(args=args, split='Val')
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
@@ -448,6 +459,7 @@ def main(args):
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
     loss_scaler = NativeScaler()
 
+    # optional criterion, but just use bce loss generally
     # criterion = torch.nn.MultiLabelSoftMarginLoss(
     #     weight=dataset_train.class_weight)
     criterion = torch.nn.BCEWithLogitsLoss(
@@ -557,17 +569,17 @@ def main(args):
 
 
 if __name__ == "__main__":
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
     # sys.argv = [
     #     '/home/taiyan/ind_projects/mae/main_finetune_sewer.py', '--output_dir',
     #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--log_dir',
     #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--finetune',
     #     '/home/taiyan/models/pretrain/mae/checkpoint-199.pth', '--data_path',
-    #     '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--nb_classes', '1',
-    #     '--accum_iter', '7', '--batch_size', '24', '--input_size', '224',
-    #     '--model', 'vit_base_patch16', '--epochs', '100', '--blr', '5e-4',
-    #     '--layer_decay', '0.65', '--weight_decay', '0.05', '--drop_path',
-    #     '0.1', '--reprob', '0.25'
+    #     '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--ds_mode',
+    #     'e2e', '--nb_classes', '17', '--accum_iter', '7', '--batch_size',
+    #     '24', '--input_size', '224', '--model', 'vit_base_patch16', '--epochs',
+    #     '100', '--blr', '5e-4', '--layer_decay', '0.65', '--weight_decay',
+    #     '0.05', '--drop_path', '0.1', '--reprob', '0.25'
     # ]
     args = get_args_parser()
     args = args.parse_args()

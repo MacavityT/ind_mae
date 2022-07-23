@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
 # export CUDA_VISIBLE_DEVICES=4,5,6,7
-GPUS=8
+GPUS=1
 PORT=${PORT:-29500}
-NAME=0701_finetune_sewer_multilabel
+NAME="$(basename $0 .sh)"
 
 PYTHONPATH="$(dirname $0)/..":$PYTHONPATH \
 python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
@@ -11,9 +11,10 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --output_dir $(dirname "$0")/../ind_models/$NAME \
     --log_dir $(dirname "$0")/../ind_models/$NAME \
     --finetune /home/taiyan/models/pretrain/mae/checkpoint-199.pth \
+    --ds_mode e2e \
     --nb_classes 17 \
-    --accum_iter 4 \
-    --batch_size 32 \
+    --accum_iter 7 \
+    --batch_size 24 \
     --input_size 224 \
     --model vit_base_patch16 \
     --epochs 12 \
@@ -22,3 +23,4 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --dist_eval \
     --data_path $(dirname "$0")/../ind_data/SewerML
     # --resume $(dirname "$0")/../ind_models/$NAME/checkpoint-80.pth
+    # --finetune $(dirname "$0")/../ind_models/mae_imagenet1k/mae_pretrain_vit_base.pth \

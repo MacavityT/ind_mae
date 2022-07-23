@@ -1,4 +1,5 @@
 import os
+import copy
 from PIL import Image
 import torchvision.transforms as transforms
 
@@ -6,25 +7,33 @@ from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from . import sewer_datasets
 
+DS_MODE_MAP = {
+    "e2e": dict(dataset="SewerMultiLabelDataset", onlyDefects=False),
+    "defect": dict(dataset="SewerMultiLabelDataset", onlyDefects=True),
+    "binary": dict(dataset="SewerBinaryDataset"),
+    "binaryrelevance": dict(dataset="SewerBinaryRelevanceDataset", defect=None)
+}
 
-def build_sewer_dataset(args, **kwargs):
-    '''
-    kwargs = dict(dataset = str,
-                  split = str, 
-                  defect = str, 
-                  onlyDefects = bool)
-    '''
-    ds = kwargs.pop('dataset')
-    split = kwargs['split']
+
+def build_sewer_dataset(args, split):
+    # get dataset settings
+    ds_mode_map = copy.deepcopy(DS_MODE_MAP)
+    ds_params = ds_mode_map[args.ds_mode]
+    print(ds_params)
+    ds_name = ds_params.pop('dataset')
+    if ds_name == 'binaryrelevance':
+        assert args.br_defect is not None, "Training mode is 'binary_relevance', but no 'br_defect' was stated"
+        ds_params['defect'] = args.br_defect
+
     ann_root = os.path.join(args.data_path, 'annotations')
     img_root = os.path.join(args.data_path, 'images', split.lower())
 
     transform = build_sewer_transform(True if split == 'Train' else False,
                                       args)
-    dataset = sewer_datasets.__dict__[ds](annRoot=ann_root,
-                                          imgRoot=img_root,
-                                          transform=transform,
-                                          **kwargs)
+    dataset = sewer_datasets.__dict__[ds_name](annRoot=ann_root,
+                                               imgRoot=img_root,
+                                               transform=transform,
+                                               **ds_params)
     print(dataset)
     return dataset
 
