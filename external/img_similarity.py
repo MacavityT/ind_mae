@@ -3,6 +3,7 @@ code from: https://blog.csdn.net/enter89/article/details/90293971
 """
 import os
 import os.path as osp
+from typing import List
 import cv2
 import numpy as np
 from PIL import Image
@@ -21,6 +22,7 @@ IMG_EXTENSIONS = [
 ]
 
 
+# 速度快，精度低
 def aHash(img):
     # 均值哈希算法
     # 缩放为8*8
@@ -46,6 +48,7 @@ def aHash(img):
     return hash_str
 
 
+# 速度比较快，精度比较高
 def dHash(img):
     # 差值哈希算法
     # 缩放8*8
@@ -63,6 +66,7 @@ def dHash(img):
     return hash_str
 
 
+# 速度慢，精度高
 def pHash(img):
     # 感知哈希算法
     # 缩放32*32
@@ -229,6 +233,33 @@ def runAllImageSimilaryFun(para1, para2):
     plt.show()
 
 
+# 对比两个路径下的图像是否一致
+def compare_paths(paths: List, hash_func):
+    assert len(paths) == 2
+    # compute hash value for images, and save to it's corresponding sub_pool
+    hash_pool = []
+    for path in paths:
+        sub_pool = {}
+        imgs = os.listdir(path)
+        for img in imgs:
+            image = cv2.imread(osp.join(path, img), cv2.IMREAD_COLOR)
+            hash_value = hash_func(image)
+            sub_pool[img] = hash_value
+        hash_pool.append(sub_pool)
+
+    # compare similarity for images
+    repeated_pair = []
+    sub_pool1, sub_pool2 = hash_pool
+    for img1, hash_value1 in sub_pool1.items():
+        for img2, hash_value2 in sub_pool2.items():
+            sim = cmpHash(hash_value1, hash_value2)
+            if sim == 0:
+                repeated_pair.append([img1, img2])
+
+    num = len(repeated_pair)
+    return repeated_pair
+
+
 def aHash_trav(dataset_path, hash_func):
     del_list = []
     val_list = []
@@ -320,7 +351,12 @@ if __name__ == "__main__":
     #         f.write((name + '\n').encode('utf-8'))
     #         tbar.update()
 
-    del_txt = '/mnt/tmp/爬虫数据集/del_list.txt'
-    old_path = '/mnt/tmp/爬虫数据集/'
-    new_path = '/mnt/tmp/爬虫数据集重复文件/'
-    mv_repeat_file(del_txt, old_path, new_path)
+    # del_txt = '/mnt/tmp/爬虫数据集/del_list.txt'
+    # old_path = '/mnt/tmp/爬虫数据集/'
+    # new_path = '/mnt/tmp/爬虫数据集重复文件/'
+    # mv_repeat_file(del_txt, old_path, new_path)
+
+    path1 = '/data/taiyan/DATASETS/painting_defects/5G机器视觉/第二批数据-5月27日/缺陷检测数据集/segm/image/'
+    path2 = '/data/taiyan/DATASETS/painting_defects/5G机器视觉/第二批数据-5月27日/缺陷检测数据集/detect/image/'
+    hash_func = pHash
+    del_list, val_list = compare_paths([path1, path2], hash_func)

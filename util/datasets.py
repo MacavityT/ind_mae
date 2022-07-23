@@ -10,6 +10,7 @@
 
 import os
 import PIL
+from PIL import Image
 
 from torchvision import datasets, transforms
 
@@ -32,6 +33,7 @@ def build_dataset(is_train, args):
 
 def build_ind_dataset(is_train, args):
     transform = build_transform(is_train, args)
+
     dataset = IndustryFinetuneDataset(
         root=args.data_path,
         img_prefix=args.img_prefix,
@@ -69,7 +71,7 @@ def build_transform(is_train, args):
         crop_pct = 1.0
     size = int(args.input_size / crop_pct)
     t.append(
-        transforms.Resize(size, interpolation=PIL.Image.BICUBIC
+        transforms.Resize(size, interpolation=Image.BICUBIC
                           ),  # to maintain same ratio w.r.t. 224 images
     )
     t.append(transforms.CenterCrop(args.input_size))

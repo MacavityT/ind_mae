@@ -138,6 +138,10 @@ class MetricLogger(object):
         log_msg = self.delimiter.join(log_msg)
         MB = 1024.0 * 1024.0
         for obj in iterable:
+            # # keep evaluate iter num, just for debug
+            # if i > 100:
+            #     break
+
             data_time.update(time.time() - end)
             yield obj
             iter_time.update(time.time() - end)

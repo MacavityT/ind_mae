@@ -14,8 +14,10 @@ import datetime
 import json
 import numpy as np
 import os
+import sys
 import time
 from pathlib import Path
+from pyparsing import Iterable
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -25,20 +27,16 @@ import timm
 
 # assert timm.__version__ == "0.3.2"  # version check
 from timm.models.layers import trunc_normal_
-from timm.data.mixup import Mixup
-from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
-
 import util.lr_decay as lrd
 import util.misc as misc
-from util.datasets import build_dataset, build_ind_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 
 import models_vit
 
-from engine_finetune import train_one_epoch, evaluate
+from engine_finetune import train_one_epoch
 
-# from ind_utils.builder import build_ind_dataset
+from classification.sewer_ml import build_sewer_dataset, sewer_evaluate
 
 
 def get_args_parser():
@@ -235,9 +233,6 @@ def get_args_parser():
         type=str,
         help="dataset path",
     )
-    parser.add_argument("--img_prefix",
-                        action="store_true",
-                        help="add train/val folder after root path")
     parser.add_argument(
         "--nb_classes",
         default=1000,
@@ -299,7 +294,7 @@ def get_args_parser():
 
 
 def main(args):
-    topk = (1, 5)
+    topk = (1, )
     misc.init_distributed_mode(args)
 
     print("job dir: {}".format(os.path.dirname(os.path.realpath(__file__))))
@@ -314,13 +309,12 @@ def main(args):
 
     cudnn.benchmark = True
 
-    # vanilla ImageNet dataset
-    dataset_train = build_dataset(is_train=True, args=args)
-    dataset_val = build_dataset(is_train=False, args=args)
+    # cls task: sewer-ml datasets
+    sewer_params_train = dict(dataset='SewerMultiLabelDataset', split='Train')
+    sewer_params_val = dict(dataset='SewerMultiLabelDataset', split='Val')
 
-    # # industry datasets
-    # dataset_train = build_ind_dataset(is_train=True, args=args)
-    # dataset_val = build_ind_dataset(is_train=False, args=args)
+    dataset_train = build_sewer_dataset(args=args, **sewer_params_train)
+    dataset_val = build_sewer_dataset(args=args, **sewer_params_val)
 
     if True:  # args.distributed:
         num_tasks = misc.get_world_size()
@@ -375,18 +369,12 @@ def main(args):
     mixup_fn = None
     mixup_active = args.mixup > 0 or args.cutmix > 0.0 or args.cutmix_minmax is not None
     if mixup_active:
-        print("Mixup is activated!")
-        mixup_fn = Mixup(
-            mixup_alpha=args.mixup,
-            cutmix_alpha=args.cutmix,
-            cutmix_minmax=args.cutmix_minmax,
-            prob=args.mixup_prob,
-            switch_prob=args.mixup_switch_prob,
-            mode=args.mixup_mode,
-            label_smoothing=args.smoothing,
-            num_classes=args.nb_classes,
-        )
+        print("Sewer-ML Dataset do not support mixup!")
 
+    if args.nb_classes != dataset_train.num_classes:
+        raise ValueError(
+            f'The input "nb_classes" = {args.nb_classes} must be equal to "dataset_train.num_classes" = {dataset_train.num_classes}'
+        )
     model = models_vit.__dict__[args.model](
         num_classes=args.nb_classes,
         drop_path_rate=args.drop_path,
@@ -460,13 +448,10 @@ def main(args):
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
     loss_scaler = NativeScaler()
 
-    if mixup_fn is not None:
-        # smoothing is handled with mixup label transform
-        criterion = SoftTargetCrossEntropy()
-    elif args.smoothing > 0.0:
-        criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-    else:
-        criterion = torch.nn.CrossEntropyLoss()
+    # criterion = torch.nn.MultiLabelSoftMarginLoss(
+    #     weight=dataset_train.class_weight)
+    criterion = torch.nn.BCEWithLogitsLoss(
+        pos_weight=dataset_train.class_weights.to(device, non_blocking=True))
 
     print("criterion = %s" % str(criterion))
 
@@ -478,10 +463,23 @@ def main(args):
     )
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device, topk=topk)
+        results = sewer_evaluate(data_loader_val, model, device)
+
+        print_info = ''
+        for k, v in results.items():
+            if isinstance(v, Iterable):
+                new_v = []
+                for e in v:
+                    e = '{:.2f}'.format(e)
+                    new_v.append(e)
+                v = new_v
+            else:
+                v = '{:.2f}'.format(v)
+            print_info += '{}: {}\n'.format(k, v)
+
         print(
-            f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
-        )
+            f"Metrics of the network on the {len(dataset_val)} test images:\n"
+            + print_info)
         exit(0)
 
     print(f"Start training for {args.epochs} epochs")
@@ -513,18 +511,27 @@ def main(args):
                 epoch=epoch,
             )
 
-        test_stats = evaluate(data_loader_val, model, device, topk=topk)
+        test_stats = sewer_evaluate(data_loader_val, model, device)
+        print_info = ''
+        for k, v in test_stats.items():
+            if isinstance(v, Iterable):
+                new_v = []
+                for e in v:
+                    e = '{:.2f}'.format(e)
+                    new_v.append(e)
+                v = new_v
+            else:
+                v = '{:.2f}'.format(v)
+            print_info += '{}: {}\n'.format(k, v)
+
         print(
-            f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%"
-        )
-        max_accuracy = max(max_accuracy, test_stats["acc1"])
-        print(f"Max accuracy: {max_accuracy:.2f}%")
+            f"Metrics of the network on the {len(dataset_val)} test images:\n"
+            + print_info)
+
+        # max_accuracy = max(max_accuracy, test_stats["acc1"])
+        # print(f"Max accuracy: {max_accuracy:.2f}%")
 
         if log_writer is not None:
-            log_writer.add_scalar("perf/test_acc1", test_stats["acc1"], epoch)
-            if topk == (1, 5):
-                log_writer.add_scalar("perf/test_acc5", test_stats["acc5"],
-                                      epoch)
             log_writer.add_scalar("perf/test_loss", test_stats["loss"], epoch)
 
         log_stats = {
@@ -550,6 +557,18 @@ def main(args):
 
 
 if __name__ == "__main__":
+    # os.environ['CUDA_VISIBLE_DEVICES'] = '5,6,7'
+    # sys.argv = [
+    #     '/home/taiyan/ind_projects/mae/main_finetune_sewer.py', '--output_dir',
+    #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--log_dir',
+    #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--finetune',
+    #     '/home/taiyan/models/pretrain/mae/checkpoint-199.pth', '--data_path',
+    #     '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--nb_classes', '1',
+    #     '--accum_iter', '7', '--batch_size', '24', '--input_size', '224',
+    #     '--model', 'vit_base_patch16', '--epochs', '100', '--blr', '5e-4',
+    #     '--layer_decay', '0.65', '--weight_decay', '0.05', '--drop_path',
+    #     '0.1', '--reprob', '0.25'
+    # ]
     args = get_args_parser()
     args = args.parse_args()
     if args.output_dir:
