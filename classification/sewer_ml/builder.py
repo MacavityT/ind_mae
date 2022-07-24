@@ -19,7 +19,6 @@ def build_sewer_dataset(args, split):
     # get dataset settings
     ds_mode_map = copy.deepcopy(DS_MODE_MAP)
     ds_params = ds_mode_map[args.ds_mode]
-    print(ds_params)
     ds_name = ds_params.pop('dataset')
     if ds_name == 'binaryrelevance':
         assert args.br_defect is not None, "Training mode is 'binary_relevance', but no 'br_defect' was stated"
@@ -32,9 +31,10 @@ def build_sewer_dataset(args, split):
                                       args)
     dataset = sewer_datasets.__dict__[ds_name](annRoot=ann_root,
                                                imgRoot=img_root,
+                                               split=split,
                                                transform=transform,
                                                **ds_params)
-    print(dataset)
+    print(f"{split} dataset: {args.ds_mode} mode with images num of {len(dataset)}")
     return dataset
 
 
