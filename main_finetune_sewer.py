@@ -575,11 +575,12 @@ if __name__ == "__main__":
     #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--log_dir',
     #     '/home/taiyan/ind_projects/mae/ind_models/debug', '--finetune',
     #     '/home/taiyan/models/pretrain/mae/checkpoint-199.pth', '--data_path',
-    #     '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--ds_mode',
-    #     'e2e', '--nb_classes', '17', '--accum_iter', '7', '--batch_size',
-    #     '24', '--input_size', '224', '--model', 'vit_base_patch16', '--epochs',
+    #     '/home/taiyan/ind_projects/mae/ind_data/SewerML', '--ds_mode', 'e2e',
+    #     '--nb_classes', '17', '--accum_iter', '7', '--batch_size', '24',
+    #     '--input_size', '224', '--model', 'vit_base_patch16', '--epochs',
     #     '100', '--blr', '5e-4', '--layer_decay', '0.65', '--weight_decay',
-    #     '0.05', '--drop_path', '0.1', '--reprob', '0.25'
+    #     '0.05', '--drop_path', '0.1', '--reprob', '0.25', '--resume',
+    #     '/data/taiyan/MODELS/pretrain/mae/checkpoint-199.pth'
     # ]
     args = get_args_parser()
     args = args.parse_args()

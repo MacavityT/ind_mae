@@ -21,5 +21,5 @@ python -m torch.distributed.launch --nproc_per_node=$GPUS --master_port=$PORT \
     --blr 5e-4 --layer_decay 0.65 \
     --weight_decay 0.05 --drop_path 0.1 --reprob 0.25 \
     --dist_eval \
-    --data_path $(dirname "$0")/../ind_data/SewerML
+    --data_path $(dirname "$0")/../ind_data/SewerML \
     --resume $(dirname "$0")/../ind_models/$NAME/checkpoint-0.pth
